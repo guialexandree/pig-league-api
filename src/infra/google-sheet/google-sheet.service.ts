@@ -1,8 +1,16 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
+import {
+  Global,
+  Injectable,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 
+@Global()
 @Injectable()
 export class GoogleSheetService {
-  async getSpreadsheetCsv(SPREADSHEET_ID: string, GID: string): Promise<string> {
+  async getSpreadsheetCsv(
+    SPREADSHEET_ID: string,
+    GID: string,
+  ): Promise<string> {
     try {
       const response = await fetch(this.buildCsvUrl(SPREADSHEET_ID, GID));
       if (!response.ok) {

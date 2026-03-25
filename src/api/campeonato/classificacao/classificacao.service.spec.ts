@@ -1,95 +1,81 @@
-import { ServiceUnavailableException } from '@nestjs/common';
+import type { Faker } from '@faker-js/faker';
+import { GetClassificacaoDto } from './use-cases/get-classificacao/get-classificacao.dto';
 import { ClassificacaoService } from './classificacao.service';
+import { GetClassificacaoUseCase } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao.use-case';
+import { LoadClassificacaoFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao-filtros.dto';
 
 describe('ClassificacaoService', () => {
   let service: ClassificacaoService;
-  let originalFetch: typeof fetch;
+  let getClassificacaoUseCase: Pick<GetClassificacaoUseCase, 'execute'>;
+  let faker: Faker;
 
-  beforeAll(() => {
-    originalFetch = global.fetch;
+  beforeAll(async () => {
+    ({ faker } = await import('@faker-js/faker'));
   });
 
   beforeEach(() => {
-    service = new ClassificacaoService();
-    global.fetch = jest.fn() as unknown as typeof fetch;
+    faker.seed(20260325);
+
+    getClassificacaoUseCase = {
+      execute: jest.fn(),
+    };
+
+    service = new ClassificacaoService(
+      getClassificacaoUseCase as GetClassificacaoUseCase,
+    );
   });
 
   afterEach(() => {
     jest.resetAllMocks();
   });
 
-  afterAll(() => {
-    global.fetch = originalFetch;
+  it('deve chamar execute do use case e repassar o payload sem alteracoes', async () => {
+    const payload: GetClassificacaoDto = {
+      grupo: faker.word.sample(),
+      atualizadoEm: faker.date.recent().toISOString(),
+      classificacao: [
+        {
+          posicao: faker.number.int({ min: 1, max: 20 }),
+          jogador: faker.person.fullName(),
+          jogos: faker.number.int({ min: 0, max: 20 }),
+          vitorias: faker.number.int({ min: 0, max: 20 }),
+          empates: faker.number.int({ min: 0, max: 20 }),
+          derrotas: faker.number.int({ min: 0, max: 20 }),
+          golsPositivo: faker.number.int({ min: 0, max: 200 }),
+          golsContra: faker.number.int({ min: 0, max: 200 }),
+          saldoGols: faker.number.int({ min: -100, max: 100 }),
+          pontos: faker.number.int({ min: 0, max: 200 }),
+        },
+      ],
+    };
+
+    (getClassificacaoUseCase.execute as jest.Mock).mockResolvedValue(payload);
+
+    await expect(service.getClassificacao()).resolves.toEqual(payload);
+    expect(getClassificacaoUseCase.execute).toHaveBeenCalledTimes(1);
+    expect(getClassificacaoUseCase.execute).toHaveBeenCalledWith(undefined);
   });
 
-  it('deve retornar classificacao a partir do CSV da planilha', async () => {
-    const csv = [
-      ',🏆 CAMPEONATO — GRUPO 1,,,,,,,,,',
-      '#,Jogador,J,V,E,D,GP,GC,SG,Pts',
-      '1,Rodrigo de Mari,3,2,1,0,8,2,6,7',
-      '2,Matheus Smek,3,2,0,1,5,3,2,6',
-      '* Os 4 primeiros classificam,,,,,,,,,',
-    ].join('\n');
+  it('deve repassar o filtro de grupo para o use case', async () => {
+    const filtros: LoadClassificacaoFilters = { grupoId: 1 };
+    const payload: GetClassificacaoDto = {
+      grupo: faker.word.sample(),
+      atualizadoEm: faker.date.recent().toISOString(),
+      classificacao: [],
+    };
 
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve(csv),
-    });
+    (getClassificacaoUseCase.execute as jest.Mock).mockResolvedValue(payload);
 
-    const response = await service.getClassificacao();
-
-    expect(global.fetch).toHaveBeenCalledWith(
-      'https://docs.google.com/spreadsheets/d/1ev1M_7z-I_NpC2pBsamqx1dbIeNTSBPJIWE4ow6kUQc/export?format=csv&gid=230309619',
-    );
-    expect(response.grupo).toBe('CAMPEONATO — GRUPO 1');
-    expect(response.classificacao).toEqual([
-      {
-        posicao: 1,
-        jogador: 'Rodrigo de Mari',
-        j: 3,
-        v: 2,
-        e: 1,
-        d: 0,
-        gp: 8,
-        gc: 2,
-        sg: 6,
-        pts: 7,
-      },
-      {
-        posicao: 2,
-        jogador: 'Matheus Smek',
-        j: 3,
-        v: 2,
-        e: 0,
-        d: 1,
-        gp: 5,
-        gc: 3,
-        sg: 2,
-        pts: 6,
-      },
-    ]);
-    expect(new Date(response.atualizadoEm).toString()).not.toBe('Invalid Date');
+    await expect(service.getClassificacao(filtros)).resolves.toEqual(payload);
+    expect(getClassificacaoUseCase.execute).toHaveBeenCalledTimes(1);
+    expect(getClassificacaoUseCase.execute).toHaveBeenCalledWith(filtros);
   });
 
-  it('deve lancar ServiceUnavailableException em falha HTTP', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: false,
-      status: 503,
-    });
+  it('deve propagar erro do use case sem remapeamento', async () => {
+    const error = new Error(faker.lorem.words(4));
+    (getClassificacaoUseCase.execute as jest.Mock).mockRejectedValue(error);
 
-    await expect(service.getClassificacao()).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
-  });
-
-  it('deve lancar ServiceUnavailableException em CSV invalido', async () => {
-    (global.fetch as jest.Mock).mockResolvedValue({
-      ok: true,
-      text: () => Promise.resolve('foo,bar,baz'),
-    });
-
-    await expect(service.getClassificacao()).rejects.toBeInstanceOf(
-      ServiceUnavailableException,
-    );
+    await expect(service.getClassificacao()).rejects.toBe(error);
+    expect(getClassificacaoUseCase.execute).toHaveBeenCalledTimes(1);
   });
 });

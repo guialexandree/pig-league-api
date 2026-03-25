@@ -1,15 +1,27 @@
+import type { Faker } from '@faker-js/faker';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClassificacaoController } from './classificacao.controller';
 import { ClassificacaoService } from './classificacao.service';
-import { ClassificacaoResponseDto } from './dto/classificacao-response.dto';
+import { GetClassificacaoDto } from './use-cases/get-classificacao/get-classificacao.dto';
+import { LoadClassificacaoFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao-filtros.dto';
 
 describe('ClassificacaoController', () => {
   let controller: ClassificacaoController;
+  let faker: Faker;
   const classificacaoService = {
-    getClassificacao: jest.fn<Promise<ClassificacaoResponseDto>, []>(),
+    getClassificacao: jest.fn<
+      Promise<GetClassificacaoDto>,
+      [LoadClassificacaoFilters?]
+    >(),
   };
 
+  beforeAll(async () => {
+    ({ faker } = await import('@faker-js/faker'));
+  });
+
   beforeEach(async () => {
+    faker.seed(20260325);
+
     const module: TestingModule = await Test.createTestingModule({
       controllers: [ClassificacaoController],
       providers: [
@@ -25,28 +37,51 @@ describe('ClassificacaoController', () => {
   });
 
   it('deve retornar a classificacao do service', async () => {
-    const payload: ClassificacaoResponseDto = {
-      grupo: 'CAMPEONATO - GRUPO 1',
-      atualizadoEm: '2026-03-24T00:00:00.000Z',
+    const payload: GetClassificacaoDto = {
+      grupo: `CAMPEONATO - GRUPO ${faker.number.int({ min: 1, max: 2 })}`,
+      atualizadoEm: faker.date.recent().toISOString(),
       classificacao: [
         {
           posicao: 1,
-          jogador: 'Rodrigo de Mari',
-          j: 0,
-          v: 0,
-          e: 0,
-          d: 0,
-          gp: 0,
-          gc: 0,
-          sg: 0,
-          pts: 0,
+          jogador: faker.person.fullName(),
+          jogos: 0,
+          vitorias: 0,
+          empates: 0,
+          derrotas: 0,
+          golsPositivo: 0,
+          golsContra: 0,
+          saldoGols: 0,
+          pontos: 0,
         },
       ],
     };
 
     classificacaoService.getClassificacao.mockResolvedValue(payload);
 
-    await expect(controller.getClassificacao()).resolves.toEqual(payload);
+    await expect(controller.getClassificacao(undefined)).resolves.toEqual(
+      payload,
+    );
     expect(classificacaoService.getClassificacao).toHaveBeenCalledTimes(1);
+    expect(classificacaoService.getClassificacao).toHaveBeenCalledWith(
+      undefined,
+    );
+  });
+
+  it('deve encaminhar o filtro de grupo para o service quando informado', async () => {
+    const filtros: LoadClassificacaoFilters = { grupoId: 2 };
+
+    const payload: GetClassificacaoDto = {
+      grupo: 'CAMPEONATO',
+      atualizadoEm: faker.date.recent().toISOString(),
+      classificacao: [],
+    };
+
+    classificacaoService.getClassificacao.mockResolvedValue(payload);
+
+    await expect(controller.getClassificacao(filtros)).resolves.toEqual(
+      payload,
+    );
+    expect(classificacaoService.getClassificacao).toHaveBeenCalledTimes(1);
+    expect(classificacaoService.getClassificacao).toHaveBeenCalledWith(filtros);
   });
 });

@@ -1,11 +1,9 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { CampeonatoModule } from './api/campeonato/campeonato.module';
+import { GoogleSheetService } from './infra/google-sheet/google-sheet.service';
 
 @Module({
   imports: [CampeonatoModule],
-  controllers: [AppController],
-  providers: [AppService],
+  providers: [GoogleSheetService],
 })
 export class AppModule {}
