@@ -40,6 +40,14 @@ describe('JogadoresController', () => {
         {
           id: faker.number.int({ min: 1, max: 999 }),
           nome: faker.person.fullName(),
+          gols: faker.number.int({ min: 0, max: 50 }),
+          partidas: faker.number.int({ min: 0, max: 30 }),
+          vitorias: faker.number.int({ min: 0, max: 30 }),
+          percentualVitoria: faker.number.float({
+            min: 0,
+            max: 100,
+            fractionDigits: 2,
+          }),
         },
       ],
     };
