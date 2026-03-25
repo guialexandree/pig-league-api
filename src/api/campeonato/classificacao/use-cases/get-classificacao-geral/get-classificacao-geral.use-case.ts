@@ -1,11 +1,15 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { PartidasService } from '@/api/campeonato/partidas/partidas.service';
 import { PartidaStatusEnum } from '@/api/campeonato/partidas/use-cases/get-partidas/partida-status.enum';
-import { GetClassificacaoDto } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao.dto';
-import { LoadClassificacaoFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao-filtros.dto';
 import { GetPartidasDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas.dto';
+import { ClassificacaoStatusFaseEnum } from './classificacao-status-fase.enum';
+import { GetClassificacaoGeralDto } from './get-classificacao-geral.dto';
+import { LoadClassificacaoGeralFilters } from './get-classificacao-geral-filtros.dto';
 
-type ClassificacaoItemBase = Omit<GetClassificacaoDto, 'posicao'>;
+type ClassificacaoItemBase = Omit<
+  GetClassificacaoGeralDto,
+  'posicao' | 'statusFase'
+>;
 type RankingValues = Pick<
   ClassificacaoItemBase,
   'pontos' | 'vitorias' | 'saldoGols'
@@ -16,23 +20,14 @@ export class GetClassificacaoGeralUseCase {
   constructor(private readonly partidasService: PartidasService) {}
 
   async execute(
-    filtros: LoadClassificacaoFilters = {},
-  ): Promise<GetClassificacaoDto[]> {
+    filtros: LoadClassificacaoGeralFilters = {},
+  ): Promise<GetClassificacaoGeralDto[]> {
     try {
       const partidas = await this.partidasService.getPartidas(
         filtros.grupoId ? { grupoId: filtros.grupoId } : undefined,
       );
 
-      const partidasRealizadas = partidas.filter(
-        (partida) =>
-          partida.status === PartidaStatusEnum.REALIZADA &&
-          partida.golsMandante !== null &&
-          partida.golsVisitante !== null,
-      );
-
-      const classificacaoPorGrupo = this.buildClassificacaoPorGrupo(
-        partidasRealizadas,
-      );
+      const classificacaoPorGrupo = this.buildClassificacaoPorGrupo(partidas);
 
       return this.toResponse(classificacaoPorGrupo);
     } catch (error) {
@@ -46,26 +41,24 @@ export class GetClassificacaoGeralUseCase {
   }
 
   private buildClassificacaoPorGrupo(
-    partidasRealizadas: GetPartidasDto[],
+    partidas: GetPartidasDto[],
   ): Map<string, ClassificacaoItemBase[]> {
-    const classificacaoByGrupo = new Map<string, Map<string, ClassificacaoItemBase>>();
+    const classificacaoByGrupo = new Map<
+      string,
+      Map<string, ClassificacaoItemBase>
+    >();
     const partidasByGrupo = new Map<string, GetPartidasDto[]>();
 
-    for (const partida of partidasRealizadas) {
-      const golsMandante = partida.golsMandante ?? 0;
-      const golsVisitante = partida.golsVisitante ?? 0;
+    for (const partida of partidas) {
       const grupo = partida.grupo;
 
       const grupoClassificacao =
-        classificacaoByGrupo.get(grupo) ?? new Map<string, ClassificacaoItemBase>();
+        classificacaoByGrupo.get(grupo) ??
+        new Map<string, ClassificacaoItemBase>();
 
       if (!classificacaoByGrupo.has(grupo)) {
         classificacaoByGrupo.set(grupo, grupoClassificacao);
       }
-
-      const partidasGrupo = partidasByGrupo.get(grupo) ?? [];
-      partidasGrupo.push(partida);
-      partidasByGrupo.set(grupo, partidasGrupo);
 
       const mandante = this.getOrCreateJogador(
         grupoClassificacao,
@@ -77,6 +70,16 @@ export class GetClassificacaoGeralUseCase {
         grupo,
         partida.visitante,
       );
+
+      if (!this.isPartidaRealizadaComPlacar(partida)) {
+        continue;
+      }
+
+      const golsMandante = partida.golsMandante ?? 0;
+      const golsVisitante = partida.golsVisitante ?? 0;
+      const partidasGrupo = partidasByGrupo.get(grupo) ?? [];
+      partidasGrupo.push(partida);
+      partidasByGrupo.set(grupo, partidasGrupo);
 
       mandante.jogos += 1;
       visitante.jogos += 1;
@@ -117,10 +120,18 @@ export class GetClassificacaoGeralUseCase {
         partidasGrupo,
       );
 
-      response.set(grupo, classificacaoOrdenada.slice(0, 4));
+      response.set(grupo, classificacaoOrdenada);
     }
 
     return response;
+  }
+
+  private isPartidaRealizadaComPlacar(partida: GetPartidasDto): boolean {
+    return (
+      partida.status === PartidaStatusEnum.REALIZADA &&
+      partida.golsMandante !== null &&
+      partida.golsVisitante !== null
+    );
   }
 
   private sortClassificacaoByGrupo(
@@ -163,7 +174,11 @@ export class GetClassificacaoGeralUseCase {
 
     if (tieGroup.length === 2) {
       return [...tieGroup].sort((itemA, itemB) =>
-        this.compareConfrontoDireto(itemA.jogador, itemB.jogador, partidasGrupo),
+        this.compareConfrontoDireto(
+          itemA.jogador,
+          itemB.jogador,
+          partidasGrupo,
+        ),
       );
     }
 
@@ -245,8 +260,10 @@ export class GetClassificacaoGeralUseCase {
 
       const golsMandante = partida.golsMandante ?? 0;
       const golsVisitante = partida.golsVisitante ?? 0;
-      const golsA = partida.mandante === jogadorA ? golsMandante : golsVisitante;
-      const golsB = partida.mandante === jogadorA ? golsVisitante : golsMandante;
+      const golsA =
+        partida.mandante === jogadorA ? golsMandante : golsVisitante;
+      const golsB =
+        partida.mandante === jogadorA ? golsVisitante : golsMandante;
 
       statsA.saldoGols += golsA - golsB;
       statsB.saldoGols += golsB - golsA;
@@ -308,7 +325,7 @@ export class GetClassificacaoGeralUseCase {
 
   private toResponse(
     classificacaoPorGrupo: Map<string, ClassificacaoItemBase[]>,
-  ): GetClassificacaoDto[] {
+  ): GetClassificacaoGeralDto[] {
     return Array.from(classificacaoPorGrupo.entries())
       .sort(([grupoA], [grupoB]) =>
         grupoA.localeCompare(grupoB, 'pt-BR', {
@@ -320,6 +337,10 @@ export class GetClassificacaoGeralUseCase {
         classificacao.map((item, index) => ({
           ...item,
           posicao: index + 1,
+          statusFase:
+            index < 4
+              ? ClassificacaoStatusFaseEnum.CLASSIFICADO
+              : ClassificacaoStatusFaseEnum.DESCLASSIFICADO,
         })),
       );
   }

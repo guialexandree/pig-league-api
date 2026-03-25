@@ -3,7 +3,10 @@ import { GetClassificacaoDto } from './use-cases/get-classificacao/get-classific
 import { ClassificacaoService } from './classificacao.service';
 import { GetClassificacaoUseCase } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao.use-case';
 import { LoadClassificacaoFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao-filtros.dto';
+import { GetClassificacaoGeralDto } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral.dto';
+import { LoadClassificacaoGeralFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral-filtros.dto';
 import { GetClassificacaoGeralUseCase } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral.use-case';
+import { ClassificacaoStatusFaseEnum } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/classificacao-status-fase.enum';
 
 describe('ClassificacaoService', () => {
   let service: ClassificacaoService;
@@ -41,6 +44,7 @@ describe('ClassificacaoService', () => {
       {
         grupo: faker.word.sample(),
         posicao: faker.number.int({ min: 1, max: 20 }),
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: faker.person.fullName(),
         jogos: faker.number.int({ min: 0, max: 20 }),
         vitorias: faker.number.int({ min: 0, max: 20 }),
@@ -80,10 +84,11 @@ describe('ClassificacaoService', () => {
   });
 
   it('deve chamar execute do use case de classificacao geral e repassar o payload sem alteracoes', async () => {
-    const payload: GetClassificacaoDto[] = [
+    const payload: GetClassificacaoGeralDto[] = [
       {
         grupo: faker.word.sample(),
         posicao: faker.number.int({ min: 1, max: 20 }),
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: faker.person.fullName(),
         jogos: faker.number.int({ min: 0, max: 20 }),
         vitorias: faker.number.int({ min: 0, max: 20 }),
@@ -104,8 +109,8 @@ describe('ClassificacaoService', () => {
   });
 
   it('deve repassar o filtro de grupo para o use case de classificacao geral', async () => {
-    const filtros: LoadClassificacaoFilters = { grupoId: 2 };
-    const payload: GetClassificacaoDto[] = [];
+    const filtros: LoadClassificacaoGeralFilters = { grupoId: 2 };
+    const payload: GetClassificacaoGeralDto[] = [];
 
     (getClassificacaoGeralUseCase.execute as jest.Mock).mockResolvedValue(
       payload,

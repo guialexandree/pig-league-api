@@ -4,6 +4,9 @@ import { ClassificacaoController } from './classificacao.controller';
 import { ClassificacaoService } from './classificacao.service';
 import { GetClassificacaoDto } from './use-cases/get-classificacao/get-classificacao.dto';
 import { LoadClassificacaoFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao-filtros.dto';
+import { GetClassificacaoGeralDto } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral.dto';
+import { LoadClassificacaoGeralFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral-filtros.dto';
+import { ClassificacaoStatusFaseEnum } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/classificacao-status-fase.enum';
 
 describe('ClassificacaoController', () => {
   let controller: ClassificacaoController;
@@ -14,8 +17,8 @@ describe('ClassificacaoController', () => {
       [LoadClassificacaoFilters?]
     >(),
     getClassificacaoGeral: jest.fn<
-      Promise<GetClassificacaoDto[]>,
-      [LoadClassificacaoFilters?]
+      Promise<GetClassificacaoGeralDto[]>,
+      [LoadClassificacaoGeralFilters?]
     >(),
   };
 
@@ -46,6 +49,7 @@ describe('ClassificacaoController', () => {
       {
         grupo: `CAMPEONATO - GRUPO ${faker.number.int({ min: 1, max: 2 })}`,
         posicao: 1,
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: faker.person.fullName(),
         jogos: 0,
         vitorias: 0,
@@ -84,10 +88,11 @@ describe('ClassificacaoController', () => {
   });
 
   it('deve retornar a classificacao geral do service', async () => {
-    const payload: GetClassificacaoDto[] = [
+    const payload: GetClassificacaoGeralDto[] = [
       {
         grupo: `CAMPEONATO - GRUPO ${faker.number.int({ min: 1, max: 2 })}`,
         posicao: 1,
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: faker.person.fullName(),
         jogos: 0,
         vitorias: 0,
@@ -112,8 +117,8 @@ describe('ClassificacaoController', () => {
   });
 
   it('deve encaminhar o filtro de grupo para classificacao geral', async () => {
-    const filtros: LoadClassificacaoFilters = { grupoId: 1 };
-    const payload: GetClassificacaoDto[] = [];
+    const filtros: LoadClassificacaoGeralFilters = { grupoId: 1 };
+    const payload: GetClassificacaoGeralDto[] = [];
 
     classificacaoService.getClassificacaoGeral.mockResolvedValue(payload);
 

@@ -1,6 +1,6 @@
-import { ClassificacaoStatusFaseEnum } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/classificacao-status-fase.enum';
+import { ClassificacaoStatusFaseEnum } from './classificacao-status-fase.enum';
 
-export interface GetClassificacaoDto {
+export interface GetClassificacaoGeralDto {
   grupo: string;
   posicao: number;
   statusFase?: ClassificacaoStatusFaseEnum;

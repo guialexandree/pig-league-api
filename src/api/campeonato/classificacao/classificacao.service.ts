@@ -3,6 +3,8 @@ import { GetClassificacaoDto } from './use-cases/get-classificacao/get-classific
 import { GetClassificacaoUseCase } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao.use-case';
 import { LoadClassificacaoFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao/get-classificacao-filtros.dto';
 import { GetClassificacaoGeralUseCase } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral.use-case';
+import { GetClassificacaoGeralDto } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral.dto';
+import { LoadClassificacaoGeralFilters } from '@/api/campeonato/classificacao/use-cases/get-classificacao-geral/get-classificacao-geral-filtros.dto';
 
 @Injectable()
 export class ClassificacaoService {
@@ -18,8 +20,8 @@ export class ClassificacaoService {
   }
 
   async getClassificacaoGeral(
-    filtros?: LoadClassificacaoFilters,
-  ): Promise<GetClassificacaoDto[]> {
+    filtros?: LoadClassificacaoGeralFilters,
+  ): Promise<GetClassificacaoGeralDto[]> {
     return this.getClassificacaoGeralUseCase.execute(filtros);
   }
 }

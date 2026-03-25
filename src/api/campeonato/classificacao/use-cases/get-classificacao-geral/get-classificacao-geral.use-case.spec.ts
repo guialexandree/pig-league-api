@@ -4,6 +4,7 @@ import { PartidasService } from '@/api/campeonato/partidas/partidas.service';
 import { PartidaStatusEnum } from '@/api/campeonato/partidas/use-cases/get-partidas/partida-status.enum';
 import { GetClassificacaoGeralUseCase } from './get-classificacao-geral.use-case';
 import { GetPartidasDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas.dto';
+import { ClassificacaoStatusFaseEnum } from './classificacao-status-fase.enum';
 
 describe('GetClassificacaoGeralUseCase', () => {
   let useCase: GetClassificacaoGeralUseCase;
@@ -65,6 +66,7 @@ describe('GetClassificacaoGeralUseCase', () => {
       {
         grupo,
         posicao: 1,
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: jogadorA,
         jogos: 4,
         vitorias: 3,
@@ -78,6 +80,7 @@ describe('GetClassificacaoGeralUseCase', () => {
       {
         grupo,
         posicao: 2,
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: jogadorB,
         jogos: 4,
         vitorias: 3,
@@ -91,6 +94,7 @@ describe('GetClassificacaoGeralUseCase', () => {
       {
         grupo,
         posicao: 3,
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: jogadorC,
         jogos: 4,
         vitorias: 3,
@@ -104,6 +108,7 @@ describe('GetClassificacaoGeralUseCase', () => {
       {
         grupo,
         posicao: 4,
+        statusFase: ClassificacaoStatusFaseEnum.CLASSIFICADO,
         jogador: jogadorE,
         jogos: 4,
         vitorias: 1,
@@ -114,10 +119,24 @@ describe('GetClassificacaoGeralUseCase', () => {
         saldoGols: -2,
         pontos: 3,
       },
+      {
+        grupo,
+        posicao: 5,
+        statusFase: ClassificacaoStatusFaseEnum.DESCLASSIFICADO,
+        jogador: jogadorD,
+        jogos: 4,
+        vitorias: 0,
+        empates: 0,
+        derrotas: 4,
+        golsPositivo: 0,
+        golsContra: 5,
+        saldoGols: -5,
+        pontos: 0,
+      },
     ]);
   });
 
-  it('deve devolver no maximo 4 classificados por grupo quando consulta geral', async () => {
+  it('deve devolver todos os jogadores com status de fase quando consulta geral', async () => {
     const grupo1 = `GRUPO ${faker.number.int({ min: 1, max: 1 })}`;
     const grupo2 = `GRUPO ${faker.number.int({ min: 2, max: 2 })}`;
 
@@ -149,23 +168,84 @@ describe('GetClassificacaoGeralUseCase', () => {
     expect(partidasService.getPartidas).toHaveBeenCalledTimes(1);
     expect(partidasService.getPartidas).toHaveBeenCalledWith(undefined);
 
-    expect(response).toHaveLength(8);
+    expect(response).toHaveLength(10);
 
-    const grupo1Classificados = response.filter((item) => item.grupo === grupo1);
-    const grupo2Classificados = response.filter((item) => item.grupo === grupo2);
+    const grupo1Classificacao = response.filter((item) => item.grupo === grupo1);
+    const grupo2Classificacao = response.filter((item) => item.grupo === grupo2);
 
-    expect(grupo1Classificados).toHaveLength(4);
-    expect(grupo2Classificados).toHaveLength(4);
+    expect(grupo1Classificacao).toHaveLength(5);
+    expect(grupo2Classificacao).toHaveLength(5);
 
-    expect(grupo1Classificados.map((item) => item.posicao)).toEqual([1, 2, 3, 4]);
-    expect(grupo2Classificados.map((item) => item.posicao)).toEqual([1, 2, 3, 4]);
+    expect(grupo1Classificacao.map((item) => item.posicao)).toEqual([1, 2, 3, 4, 5]);
+    expect(grupo2Classificacao.map((item) => item.posicao)).toEqual([1, 2, 3, 4, 5]);
 
-    expect(grupo1Classificados.map((item) => item.jogador)).toEqual(
-      grupo1Jogadores.slice(0, 4),
+    expect(grupo1Classificacao.map((item) => item.jogador)).toEqual(
+      grupo1Jogadores,
     );
-    expect(grupo2Classificados.map((item) => item.jogador)).toEqual(
-      grupo2Jogadores.slice(0, 4),
+    expect(grupo2Classificacao.map((item) => item.jogador)).toEqual(
+      grupo2Jogadores,
     );
+    expect(grupo1Classificacao.map((item) => item.statusFase)).toEqual([
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.DESCLASSIFICADO,
+    ]);
+    expect(grupo2Classificacao.map((item) => item.statusFase)).toEqual([
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.DESCLASSIFICADO,
+    ]);
+  });
+
+  it('deve retornar jogadores com estatisticas zeradas quando nao houver partidas realizadas', async () => {
+    const grupo = `GRUPO ${faker.number.int({ min: 1, max: 1 })}`;
+    const jogadorA = faker.company.name();
+    const jogadorB = faker.company.name();
+    const jogadorC = faker.company.name();
+
+    const partidas: GetPartidasDto[] = [
+      createPartida(grupo, jogadorC, null, null, jogadorA, PartidaStatusEnum.AGENDADA),
+      createPartida(
+        grupo,
+        jogadorB,
+        null,
+        null,
+        jogadorC,
+        PartidaStatusEnum.NAO_AGENDADA,
+      ),
+      createPartida(grupo, jogadorA, null, null, jogadorB, PartidaStatusEnum.CANCELADA),
+    ];
+
+    (partidasService.getPartidas as jest.Mock).mockResolvedValue(partidas);
+
+    const response = await useCase.execute({ grupoId: 1 });
+
+    const jogadoresOrdenados = [jogadorA, jogadorB, jogadorC].sort((itemA, itemB) =>
+      itemA.localeCompare(itemB, 'pt-BR', { sensitivity: 'base' }),
+    );
+
+    expect(partidasService.getPartidas).toHaveBeenCalledTimes(1);
+    expect(partidasService.getPartidas).toHaveBeenCalledWith({ grupoId: 1 });
+    expect(response).toHaveLength(3);
+    expect(response.map((item) => item.jogador)).toEqual(jogadoresOrdenados);
+    expect(response.map((item) => item.posicao)).toEqual([1, 2, 3]);
+    expect(response.map((item) => item.jogos)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.vitorias)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.empates)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.derrotas)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.golsPositivo)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.golsContra)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.saldoGols)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.pontos)).toEqual([0, 0, 0]);
+    expect(response.map((item) => item.statusFase)).toEqual([
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+      ClassificacaoStatusFaseEnum.CLASSIFICADO,
+    ]);
   });
 
   it('deve propagar erro como ServiceUnavailableException', async () => {
