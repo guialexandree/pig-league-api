@@ -10,7 +10,7 @@ export class ClassificacaoController {
   @Get('classificacao')
   getClassificacao(
     @Query() query: LoadClassificacaoFilters,
-  ): Promise<GetClassificacaoDto> {
+  ): Promise<GetClassificacaoDto[]> {
     return this.classificacaoService.getClassificacao(query);
   }
 }

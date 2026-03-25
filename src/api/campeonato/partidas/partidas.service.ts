@@ -9,7 +9,7 @@ import { GetPartidasFiltrosDto } from '@/api/campeonato/partidas/use-cases/get-p
 export class PartidasService {
   constructor(private readonly getPartidasUseCase: GetPartidasUseCase) {}
 
-  async getPartidas(grupo: GetPartidasFiltrosDto): Promise<GetPartidasDto> {
+  async getPartidas(grupo: GetPartidasFiltrosDto = {}): Promise<GetPartidasDto[]> {
     return this.getPartidasUseCase.execute(grupo);
   }
 }

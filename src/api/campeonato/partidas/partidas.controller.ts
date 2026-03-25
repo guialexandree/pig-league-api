@@ -18,7 +18,9 @@ export class PartidasController {
   @Get('partidas')
   @ApiOperation({ summary: 'Buscar produtos por filtros' })
   @ApiOkResponse({ description: 'Lista de produtos' })
-  getPartidas(@Query() query: GetPartidasFiltrosDto): Promise<GetPartidasDto> {
+  getPartidas(
+    @Query() query: GetPartidasFiltrosDto = {},
+  ): Promise<GetPartidasDto[]> {
     return this.partidasService.getPartidas(query);
   }
 }

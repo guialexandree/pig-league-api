@@ -1,4 +1,4 @@
-import { GetClassificacaoJogadorDto } from './get-classificacao.dto';
+import { GetClassificacaoDto } from './get-classificacao.dto';
 import { GoogleSheetCsvParser } from '@/infra/google-sheet/parsers/google-sheet-csv-parser.interface';
 import {
   normalizeCell,
@@ -6,13 +6,15 @@ import {
   parseInteger,
 } from '@/infra/google-sheet/parsers/google-sheet-csv-utils';
 
+type ParsedClassificacaoItemDto = Omit<GetClassificacaoDto, 'grupo'>;
+
 export class ClassificacaoCsvParser implements GoogleSheetCsvParser<{
   grupo: string;
-  itens: GetClassificacaoJogadorDto[];
+  itens: ParsedClassificacaoItemDto[];
 }> {
   parse(csvText: string): {
     grupo: string;
-    itens: GetClassificacaoJogadorDto[];
+    itens: ParsedClassificacaoItemDto[];
   } {
     const rows = parseCsvRows(csvText);
 
@@ -28,7 +30,7 @@ export class ClassificacaoCsvParser implements GoogleSheetCsvParser<{
       );
     }
 
-    const itens: GetClassificacaoJogadorDto[] = [];
+    const itens: ParsedClassificacaoItemDto[] = [];
     const dataRows = rows.slice(headerIndex + 1);
 
     for (const row of dataRows) {

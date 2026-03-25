@@ -1,4 +1,5 @@
-export interface GetClassificacaoJogadorDto {
+export interface GetClassificacaoDto {
+  grupo: string;
   posicao: number;
   jogador: string;
   jogos: number;
@@ -9,10 +10,4 @@ export interface GetClassificacaoJogadorDto {
   golsContra: number;
   saldoGols: number;
   pontos: number;
-}
-
-export interface GetClassificacaoDto {
-  grupo: string;
-  atualizadoEm: string;
-  classificacao: GetClassificacaoJogadorDto[];
 }

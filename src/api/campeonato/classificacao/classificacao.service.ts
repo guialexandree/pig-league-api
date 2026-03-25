@@ -11,7 +11,7 @@ export class ClassificacaoService {
 
   async getClassificacao(
     filtros?: LoadClassificacaoFilters,
-  ): Promise<GetClassificacaoDto> {
+  ): Promise<GetClassificacaoDto[]> {
     return this.getClassificacaoUseCase.execute(filtros);
   }
 }

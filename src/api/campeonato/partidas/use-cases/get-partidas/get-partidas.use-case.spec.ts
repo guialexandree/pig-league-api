@@ -36,7 +36,7 @@ describe('GetPartidasUseCase', () => {
     jest.resetAllMocks();
   });
 
-  it('deve consultar os dois GIDs de partidas e devolver payload unificado com data de atualizacao', async () => {
+  it('deve consultar os dois GIDs de partidas e devolver lista unificada', async () => {
     const firstCsvPayload = faker.string.uuid();
     const secondCsvPayload = faker.string.uuid();
 
@@ -52,6 +52,7 @@ describe('GetPartidasUseCase', () => {
       partidas: [
         {
           grupo: firstGroup,
+          dataHora: faker.date.soon().toISOString(),
           mandante: firstHome,
           golsMandante: faker.number.int({ min: 0, max: 15 }),
           golsVisitante: faker.number.int({ min: 0, max: 15 }),
@@ -66,6 +67,7 @@ describe('GetPartidasUseCase', () => {
       partidas: [
         {
           grupo: secondGroup,
+          dataHora: faker.date.soon().toISOString(),
           mandante: secondHome,
           golsMandante: faker.number.int({ min: 0, max: 15 }),
           golsVisitante: faker.number.int({ min: 0, max: 15 }),
@@ -82,7 +84,7 @@ describe('GetPartidasUseCase', () => {
       .mockReturnValueOnce(firstParsedPayload)
       .mockReturnValueOnce(secondParsedPayload);
 
-    const response = await useCase.execute();
+    const response = await useCase.execute({});
 
     expect(googleSheetService.getSpreadsheetCsv).toHaveBeenCalledTimes(2);
     expect(googleSheetService.getSpreadsheetCsv).toHaveBeenNthCalledWith(
@@ -100,12 +102,10 @@ describe('GetPartidasUseCase', () => {
     expect(parser.parse).toHaveBeenNthCalledWith(1, firstCsvPayload);
     expect(parser.parse).toHaveBeenNthCalledWith(2, secondCsvPayload);
 
-    expect(response.grupo).toBe('CAMPEONATO');
-    expect(response.partidas).toEqual([
+    expect(response).toEqual([
       ...firstParsedPayload.partidas,
       ...secondParsedPayload.partidas,
     ]);
-    expect(new Date(response.atualizadoEm).toString()).not.toBe('Invalid Date');
   });
 
   it('deve consultar apenas o GID do grupo 1 quando o filtro for grupo 1', async () => {
@@ -119,6 +119,7 @@ describe('GetPartidasUseCase', () => {
       partidas: [
         {
           grupo: group,
+          dataHora: faker.date.soon().toISOString(),
           mandante: home,
           golsMandante: faker.number.int({ min: 0, max: 15 }),
           golsVisitante: faker.number.int({ min: 0, max: 15 }),
@@ -133,7 +134,7 @@ describe('GetPartidasUseCase', () => {
     );
     (parser.parse as jest.Mock).mockReturnValueOnce(parsedPayload);
 
-    const response = await useCase.execute(1);
+    const response = await useCase.execute({ grupoId: 1 });
 
     expect(googleSheetService.getSpreadsheetCsv).toHaveBeenCalledTimes(1);
     expect(googleSheetService.getSpreadsheetCsv).toHaveBeenCalledWith(
@@ -143,7 +144,7 @@ describe('GetPartidasUseCase', () => {
 
     expect(parser.parse).toHaveBeenCalledTimes(1);
     expect(parser.parse).toHaveBeenCalledWith(csvPayload);
-    expect(response.partidas).toEqual(parsedPayload.partidas);
+    expect(response).toEqual(parsedPayload.partidas);
   });
 
   it('deve consultar apenas o GID do grupo 2 quando o filtro for grupo 2', async () => {
@@ -157,6 +158,7 @@ describe('GetPartidasUseCase', () => {
       partidas: [
         {
           grupo: group,
+          dataHora: faker.date.soon().toISOString(),
           mandante: home,
           golsMandante: faker.number.int({ min: 0, max: 15 }),
           golsVisitante: faker.number.int({ min: 0, max: 15 }),
@@ -171,7 +173,7 @@ describe('GetPartidasUseCase', () => {
     );
     (parser.parse as jest.Mock).mockReturnValueOnce(parsedPayload);
 
-    const response = await useCase.execute(2);
+    const response = await useCase.execute({ grupoId: 2 });
 
     expect(googleSheetService.getSpreadsheetCsv).toHaveBeenCalledTimes(1);
     expect(googleSheetService.getSpreadsheetCsv).toHaveBeenCalledWith(
@@ -181,7 +183,7 @@ describe('GetPartidasUseCase', () => {
 
     expect(parser.parse).toHaveBeenCalledTimes(1);
     expect(parser.parse).toHaveBeenCalledWith(csvPayload);
-    expect(response.partidas).toEqual(parsedPayload.partidas);
+    expect(response).toEqual(parsedPayload.partidas);
   });
 
   it('deve propagar erro como ServiceUnavailableException', async () => {
@@ -191,7 +193,7 @@ describe('GetPartidasUseCase', () => {
       new Error(message),
     );
 
-    await expect(useCase.execute()).rejects.toBeInstanceOf(
+    await expect(useCase.execute({})).rejects.toBeInstanceOf(
       ServiceUnavailableException,
     );
   });

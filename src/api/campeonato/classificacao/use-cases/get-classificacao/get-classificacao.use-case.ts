@@ -21,7 +21,7 @@ export class GetClassificacaoUseCase {
 
   async execute(
     filters: LoadClassificacaoFilters = {},
-  ): Promise<GetClassificacaoDto> {
+  ): Promise<GetClassificacaoDto[]> {
     try {
       const gid = filters.grupoId
         ? CLASSIFICACAO_GID_BY_GRUPO[
@@ -38,7 +38,12 @@ export class GetClassificacaoUseCase {
 
       const classificacao = csvPayloads
         .map((csvPayload) => this.classificacaoCsvParser.parse(csvPayload))
-        .flatMap((parsedTab) => parsedTab.itens)
+        .flatMap((parsedTab) =>
+          parsedTab.itens.map((item) => ({
+            ...item,
+            grupo: parsedTab.grupo,
+          })),
+        )
         .sort((itemA, itemB) => {
           if (itemB.pontos !== itemA.pontos) {
             return itemB.pontos - itemA.pontos;
@@ -61,11 +66,7 @@ export class GetClassificacaoUseCase {
           posicao: index + 1,
         }));
 
-      return {
-        grupo: 'CAMPEONATO',
-        atualizadoEm: new Date().toISOString(),
-        classificacao,
-      };
+      return classificacao;
     } catch (error) {
       const details =
         error instanceof Error ? `: ${error.message}` : ': erro desconhecido';

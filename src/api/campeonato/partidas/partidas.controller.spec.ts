@@ -1,9 +1,9 @@
 import type { Faker } from '@faker-js/faker';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PartidasGrupoFilter } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas.use-case';
 import { PartidasController } from './partidas.controller';
 import { PartidasService } from './partidas.service';
 import { GetPartidasDto } from './use-cases/get-partidas/get-partidas.dto';
+import { GetPartidasFiltrosDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas-filtros.dto';
 import { PartidaStatusEnum } from './use-cases/get-partidas/partida-status.enum';
 
 describe('PartidasController', () => {
@@ -11,8 +11,8 @@ describe('PartidasController', () => {
   let faker: Faker;
   const partidasService = {
     getPartidas: jest.fn<
-      Promise<GetPartidasDto>,
-      [grupo?: PartidasGrupoFilter]
+      Promise<GetPartidasDto[]>,
+      [filtros: GetPartidasFiltrosDto]
     >(),
   };
 
@@ -41,43 +41,34 @@ describe('PartidasController', () => {
     const home = faker.person.fullName();
     const away = faker.person.fullName();
 
-    const payload: GetPartidasDto = {
-      grupo: `GRUPO ${faker.number.int({ min: 1, max: 9 })}`,
-      atualizadoEm: faker.date.recent().toISOString(),
-      partidas: [
-        {
-          grupo: `GRUPO ${faker.number.int({ min: 1, max: 9 })}`,
-          mandante: home,
-          golsMandante: faker.number.int({ min: 0, max: 15 }),
-          golsVisitante: faker.number.int({ min: 0, max: 15 }),
-          visitante: away,
-          status: PartidaStatusEnum.REALIZADA,
-        },
-      ],
-    };
+    const payload: GetPartidasDto[] = [
+      {
+        grupo: `GRUPO ${faker.number.int({ min: 1, max: 9 })}`,
+        dataHora: faker.date.soon().toISOString(),
+        mandante: home,
+        golsMandante: faker.number.int({ min: 0, max: 15 }),
+        golsVisitante: faker.number.int({ min: 0, max: 15 }),
+        visitante: away,
+        status: PartidaStatusEnum.REALIZADA,
+      },
+    ];
 
     partidasService.getPartidas.mockResolvedValue(payload);
 
-    await expect(controller.getPartidas(undefined)).resolves.toEqual(payload);
+    await expect(controller.getPartidas({})).resolves.toEqual(payload);
     expect(partidasService.getPartidas).toHaveBeenCalledTimes(1);
-    expect(partidasService.getPartidas).toHaveBeenCalledWith(undefined);
+    expect(partidasService.getPartidas).toHaveBeenCalledWith({});
   });
 
   it('deve encaminhar o grupo para o service quando informado', async () => {
-    const grupo: PartidasGrupoFilter = 2;
-
-    const payload: GetPartidasDto = {
-      grupo: `GRUPO ${grupo}`,
-      atualizadoEm: faker.date.recent().toISOString(),
-      partidas: [],
-    };
+    const grupoId = 2;
+    const filtros = { grupoId };
+    const payload: GetPartidasDto[] = [];
 
     partidasService.getPartidas.mockResolvedValue(payload);
 
-    await expect(
-      controller.getPartidas(String(grupo) as '1' | '2'),
-    ).resolves.toEqual(payload);
+    await expect(controller.getPartidas(filtros)).resolves.toEqual(payload);
     expect(partidasService.getPartidas).toHaveBeenCalledTimes(1);
-    expect(partidasService.getPartidas).toHaveBeenCalledWith(grupo);
+    expect(partidasService.getPartidas).toHaveBeenCalledWith(filtros);
   });
 });

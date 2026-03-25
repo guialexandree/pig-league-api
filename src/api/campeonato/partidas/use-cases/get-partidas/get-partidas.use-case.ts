@@ -19,7 +19,7 @@ export class GetPartidasUseCase {
     private readonly parser: GetPartidasCsvParser,
   ) {}
 
-  async execute(filters: GetPartidasFiltrosDto): Promise<GetPartidasDto> {
+  async execute(filters: GetPartidasFiltrosDto = {}): Promise<GetPartidasDto[]> {
     try {
       const gids = filters.grupoId
         ? [PARTIDAS_GID_BY_GRUPO[filters.grupoId]]
@@ -35,11 +35,7 @@ export class GetPartidasUseCase {
         .map((csvPayload) => this.parser.parse(csvPayload))
         .flatMap((parsedTab) => parsedTab.partidas);
 
-      return {
-        grupo: 'CAMPEONATO',
-        atualizadoEm: new Date().toISOString(),
-        partidas,
-      };
+      return partidas;
     } catch (error) {
       const details =
         error instanceof Error ? `: ${error.message}` : ': erro desconhecido';

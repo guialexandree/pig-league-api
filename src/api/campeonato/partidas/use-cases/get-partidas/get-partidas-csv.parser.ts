@@ -1,20 +1,20 @@
-import { isValid, parse, parseISO } from 'date-fns';
+import { format, isValid, parse, parseISO } from 'date-fns';
 import { GoogleSheetCsvParser } from '@/infra/google-sheet/parsers/google-sheet-csv-parser.interface';
 import {
   normalizeCell,
   parseCsvRows,
   parseInteger,
 } from '@/infra/google-sheet/parsers/google-sheet-csv-utils';
-import { GetPartidaItemDto } from './get-partidas.dto';
+import { GetPartidasDto } from './get-partidas.dto';
 import { PartidaStatusEnum } from './partida-status.enum';
 
 export class GetPartidasCsvParser implements GoogleSheetCsvParser<{
   grupo: string;
-  partidas: GetPartidaItemDto[];
+  partidas: GetPartidasDto[];
 }> {
   parse(csvText: string): {
     grupo: string;
-    partidas: GetPartidaItemDto[];
+    partidas: GetPartidasDto[];
   } {
     const rows = parseCsvRows(csvText);
 
@@ -34,7 +34,7 @@ export class GetPartidasCsvParser implements GoogleSheetCsvParser<{
     }
 
     const grupo = this.extractGroup(rows);
-    const partidas: GetPartidaItemDto[] = [];
+    const partidas: GetPartidasDto[] = [];
     const dataRows = rows.slice(headerIndex + 1);
 
     for (const row of dataRows) {
@@ -53,19 +53,16 @@ export class GetPartidasCsvParser implements GoogleSheetCsvParser<{
       const golsVisitante = this.parseGoals(row[2], 'golsVisitante');
       const statusText = (row[4] ?? '').trim();
       const dataPartida = (row[5] ?? '').trim();
+      const dataHora = this.parseDataHora(dataPartida);
 
       partidas.push({
         grupo,
+        dataHora,
         mandante,
         golsMandante,
         golsVisitante,
         visitante,
-        status: this.inferStatus(
-          statusText,
-          dataPartida,
-          golsMandante,
-          golsVisitante,
-        ),
+        status: this.inferStatus(statusText, dataHora, golsMandante, golsVisitante),
       });
     }
 
@@ -91,7 +88,7 @@ export class GetPartidasCsvParser implements GoogleSheetCsvParser<{
 
   private inferStatus(
     statusText: string,
-    dataPartida: string,
+    dataHora: string | null,
     golsMandante: number | null,
     golsVisitante: number | null,
   ): PartidaStatusEnum {
@@ -99,7 +96,7 @@ export class GetPartidasCsvParser implements GoogleSheetCsvParser<{
       return PartidaStatusEnum.CANCELADA;
     }
 
-    if (!this.hasScheduledDate(dataPartida)) {
+    if (!dataHora) {
       return PartidaStatusEnum.NAO_AGENDADA;
     }
 
@@ -114,28 +111,63 @@ export class GetPartidasCsvParser implements GoogleSheetCsvParser<{
     return /cancelad[ao]/i.test(statusText);
   }
 
-  private hasScheduledDate(dataPartida: string): boolean {
-    if (!dataPartida) {
-      return false;
+  private parseDataHora(dataPartida: string): string | null {
+    const date = this.parseDate(dataPartida);
+
+    if (!date) {
+      return null;
     }
 
-    if (isValid(parseISO(dataPartida))) {
-      return true;
+    return format(date, "yyyy-MM-dd'T'HH:mm:ss");
+  }
+
+  private parseDate(dataPartida: string): Date | null {
+    if (!dataPartida) {
+      return null;
+    }
+
+    const normalized = dataPartida.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    const parsedIso = parseISO(normalized);
+    if (isValid(parsedIso)) {
+      return parsedIso;
     }
 
     const supportedFormats = [
+      'dd/MM/yyyy HH:mm:ss',
+      'd/M/yyyy HH:mm:ss',
+      'dd/MM/yy HH:mm:ss',
+      'd/M/yy HH:mm:ss',
+      'dd/MM/yyyy HH:mm',
+      'd/M/yyyy HH:mm',
+      'dd/MM/yy HH:mm',
+      'd/M/yy HH:mm',
+      'dd/MM/yyyy H:mm',
+      'd/M/yyyy H:mm',
+      'dd/MM/yy H:mm',
+      'd/M/yy H:mm',
+      'yyyy-MM-dd HH:mm:ss',
+      'yyyy-MM-dd HH:mm',
+      'yyyy-MM-dd',
       'dd/MM/yyyy',
       'd/M/yyyy',
       'dd/MM/yy',
       'd/M/yy',
-      'yyyy-MM-dd',
       'dd-MM-yyyy',
       'd-M-yyyy',
     ];
 
-    return supportedFormats.some((format) =>
-      isValid(parse(dataPartida, format, new Date())),
-    );
+    for (const dateFormat of supportedFormats) {
+      const parsedDate = parse(normalized, dateFormat, new Date());
+      if (isValid(parsedDate)) {
+        return parsedDate;
+      }
+    }
+
+    return null;
   }
 
   private extractGroup(rows: string[][]): string {

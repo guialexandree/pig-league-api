@@ -2,22 +2,12 @@ import type { Faker } from '@faker-js/faker';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { GoogleSheetService } from '@/infra/google-sheet/google-sheet.service';
 import { ClassificacaoCsvParser } from './get-classificacao-csv.parser';
+import { GetClassificacaoDto } from './get-classificacao.dto';
 import { GetClassificacaoUseCase } from './get-classificacao.use-case';
 
 type ParsedClassificacaoPayload = {
   grupo: string;
-  itens: Array<{
-    posicao: number;
-    jogador: string;
-    jogos: number;
-    vitorias: number;
-    empates: number;
-    derrotas: number;
-    golsPositivo: number;
-    golsContra: number;
-    saldoGols: number;
-    pontos: number;
-  }>;
+  itens: Array<Omit<GetClassificacaoDto, 'grupo'>>;
 };
 
 function createDeferred<T>() {
@@ -77,6 +67,8 @@ describe('GetClassificacaoUseCase', () => {
     const tiePlayerB = faker.person.fullName();
     const tiePlayerA = faker.person.fullName();
     const topPlayer = faker.person.fullName();
+    const firstGroup = `GRUPO ${faker.number.int({ min: 1, max: 9 })}`;
+    const secondGroup = `GRUPO ${faker.number.int({ min: 10, max: 19 })}`;
 
     (googleSheetService.getSpreadsheetCsv as jest.Mock)
       .mockImplementationOnce(() => firstDeferred.promise)
@@ -84,7 +76,7 @@ describe('GetClassificacaoUseCase', () => {
 
     (parser.parse as jest.Mock)
       .mockReturnValueOnce({
-        grupo: `GRUPO ${faker.number.int({ min: 1, max: 9 })}`,
+        grupo: firstGroup,
         itens: [
           {
             posicao: 1,
@@ -113,7 +105,7 @@ describe('GetClassificacaoUseCase', () => {
         ],
       })
       .mockReturnValueOnce({
-        grupo: `GRUPO ${faker.number.int({ min: 10, max: 19 })}`,
+        grupo: secondGroup,
         itens: [
           {
             posicao: 1,
@@ -178,11 +170,9 @@ describe('GetClassificacaoUseCase', () => {
     expect(parser.parse).toHaveBeenNthCalledWith(1, csvA);
     expect(parser.parse).toHaveBeenNthCalledWith(2, csvB);
 
-    expect(response.grupo).toBe('CAMPEONATO');
-    expect(new Date(response.atualizadoEm).toString()).not.toBe('Invalid Date');
-
-    expect(response.classificacao).toEqual([
+    expect(response).toEqual([
       {
+        grupo: secondGroup,
         posicao: 1,
         jogador: topPlayer,
         jogos: 3,
@@ -195,6 +185,7 @@ describe('GetClassificacaoUseCase', () => {
         pontos: 12,
       },
       {
+        grupo: firstGroup,
         posicao: 2,
         jogador: duplicatePlayer,
         jogos: 3,
@@ -207,6 +198,7 @@ describe('GetClassificacaoUseCase', () => {
         pontos: 9,
       },
       {
+        grupo: firstGroup,
         posicao: 3,
         jogador: tiePlayerA < tiePlayerB ? tiePlayerA : tiePlayerB,
         jogos: 3,
@@ -219,6 +211,7 @@ describe('GetClassificacaoUseCase', () => {
         pontos: 9,
       },
       {
+        grupo: secondGroup,
         posicao: 4,
         jogador: tiePlayerA < tiePlayerB ? tiePlayerB : tiePlayerA,
         jogos: 3,
@@ -231,6 +224,7 @@ describe('GetClassificacaoUseCase', () => {
         pontos: 9,
       },
       {
+        grupo: secondGroup,
         posicao: 5,
         jogador: duplicatePlayer,
         jogos: 3,
@@ -280,7 +274,12 @@ describe('GetClassificacaoUseCase', () => {
 
     expect(parser.parse).toHaveBeenCalledTimes(1);
     expect(parser.parse).toHaveBeenCalledWith(csvPayload);
-    expect(response.classificacao).toEqual(parsedPayload.itens);
+    expect(response).toEqual(
+      parsedPayload.itens.map((item) => ({
+        ...item,
+        grupo: parsedPayload.grupo,
+      })),
+    );
   });
 
   it('deve consultar apenas o GID do grupo 2 quando filtro grupoId for 2', async () => {
@@ -318,7 +317,12 @@ describe('GetClassificacaoUseCase', () => {
 
     expect(parser.parse).toHaveBeenCalledTimes(1);
     expect(parser.parse).toHaveBeenCalledWith(csvPayload);
-    expect(response.classificacao).toEqual(parsedPayload.itens);
+    expect(response).toEqual(
+      parsedPayload.itens.map((item) => ({
+        ...item,
+        grupo: parsedPayload.grupo,
+      })),
+    );
   });
 
   it('deve propagar erro como ServiceUnavailableException', async () => {

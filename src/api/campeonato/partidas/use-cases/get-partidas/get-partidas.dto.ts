@@ -1,16 +1,11 @@
 import { PartidaStatusEnum } from './partida-status.enum';
 
-export interface GetPartidaItemDto {
+export interface GetPartidasDto {
   grupo: string;
+  dataHora: string | null;
   mandante: string;
   golsMandante: number | null;
   golsVisitante: number | null;
   visitante: string;
   status: PartidaStatusEnum;
-}
-
-export interface GetPartidasDto {
-  grupo: string;
-  atualizadoEm: string;
-  partidas: GetPartidaItemDto[];
 }

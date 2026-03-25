@@ -30,24 +30,21 @@ describe('ClassificacaoService', () => {
   });
 
   it('deve chamar execute do use case e repassar o payload sem alteracoes', async () => {
-    const payload: GetClassificacaoDto = {
-      grupo: faker.word.sample(),
-      atualizadoEm: faker.date.recent().toISOString(),
-      classificacao: [
-        {
-          posicao: faker.number.int({ min: 1, max: 20 }),
-          jogador: faker.person.fullName(),
-          jogos: faker.number.int({ min: 0, max: 20 }),
-          vitorias: faker.number.int({ min: 0, max: 20 }),
-          empates: faker.number.int({ min: 0, max: 20 }),
-          derrotas: faker.number.int({ min: 0, max: 20 }),
-          golsPositivo: faker.number.int({ min: 0, max: 200 }),
-          golsContra: faker.number.int({ min: 0, max: 200 }),
-          saldoGols: faker.number.int({ min: -100, max: 100 }),
-          pontos: faker.number.int({ min: 0, max: 200 }),
-        },
-      ],
-    };
+    const payload: GetClassificacaoDto[] = [
+      {
+        grupo: faker.word.sample(),
+        posicao: faker.number.int({ min: 1, max: 20 }),
+        jogador: faker.person.fullName(),
+        jogos: faker.number.int({ min: 0, max: 20 }),
+        vitorias: faker.number.int({ min: 0, max: 20 }),
+        empates: faker.number.int({ min: 0, max: 20 }),
+        derrotas: faker.number.int({ min: 0, max: 20 }),
+        golsPositivo: faker.number.int({ min: 0, max: 200 }),
+        golsContra: faker.number.int({ min: 0, max: 200 }),
+        saldoGols: faker.number.int({ min: -100, max: 100 }),
+        pontos: faker.number.int({ min: 0, max: 200 }),
+      },
+    ];
 
     (getClassificacaoUseCase.execute as jest.Mock).mockResolvedValue(payload);
 
@@ -58,11 +55,7 @@ describe('ClassificacaoService', () => {
 
   it('deve repassar o filtro de grupo para o use case', async () => {
     const filtros: LoadClassificacaoFilters = { grupoId: 1 };
-    const payload: GetClassificacaoDto = {
-      grupo: faker.word.sample(),
-      atualizadoEm: faker.date.recent().toISOString(),
-      classificacao: [],
-    };
+    const payload: GetClassificacaoDto[] = [];
 
     (getClassificacaoUseCase.execute as jest.Mock).mockResolvedValue(payload);
 

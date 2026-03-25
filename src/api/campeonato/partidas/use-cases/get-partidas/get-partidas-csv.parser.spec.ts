@@ -1,4 +1,5 @@
 import type { Faker } from '@faker-js/faker';
+import { format, parseISO } from 'date-fns';
 import { PartidaStatusEnum } from './partida-status.enum';
 import { GetPartidasCsvParser } from './get-partidas-csv.parser';
 
@@ -27,6 +28,10 @@ describe('GetPartidasCsvParser', () => {
     const fourthHome = faker.person.fullName();
     const fourthAway = faker.person.fullName();
     const scheduledDate = faker.date.soon().toISOString();
+    const normalizedScheduledDate = format(
+      parseISO(scheduledDate),
+      "yyyy-MM-dd'T'HH:mm:ss",
+    );
 
     const csv = [
       `⚽  JOGOS — GRUPO ${groupNumber},,,,,`,
@@ -51,6 +56,7 @@ describe('GetPartidasCsvParser', () => {
         golsVisitante: 1,
         visitante: firstAway,
         status: PartidaStatusEnum.REALIZADA,
+        dataHora: normalizedScheduledDate,
       },
       {
         grupo: `GRUPO ${groupNumber}`,
@@ -59,6 +65,7 @@ describe('GetPartidasCsvParser', () => {
         golsVisitante: null,
         visitante: secondAway,
         status: PartidaStatusEnum.AGENDADA,
+        dataHora: normalizedScheduledDate,
       },
       {
         grupo: `GRUPO ${groupNumber}`,
@@ -67,6 +74,7 @@ describe('GetPartidasCsvParser', () => {
         golsVisitante: 0,
         visitante: thirdAway,
         status: PartidaStatusEnum.NAO_AGENDADA,
+        dataHora: null,
       },
       {
         grupo: `GRUPO ${groupNumber}`,
@@ -75,6 +83,35 @@ describe('GetPartidasCsvParser', () => {
         golsVisitante: null,
         visitante: fourthAway,
         status: PartidaStatusEnum.CANCELADA,
+        dataHora: normalizedScheduledDate,
+      },
+    ]);
+  });
+
+  it('deve interpretar data e hora em formato pt-BR', () => {
+    const groupNumber = faker.number.int({ min: 1, max: 9 });
+    const mandante = faker.person.fullName();
+    const visitante = faker.person.fullName();
+    const dataHoraPlanilha = '08/03/2026 21:00';
+
+    const csv = [
+      `⚽  JOGOS — GRUPO ${groupNumber},,,,,`,
+      ',,,,,',
+      'Mandante,Gols,Gols,Visitante,Resultado,Data',
+      `${mandante},,,${visitante},,${dataHoraPlanilha}`,
+    ].join('\n');
+
+    const parsed = parser.parse(csv);
+
+    expect(parsed.partidas).toEqual([
+      {
+        grupo: `GRUPO ${groupNumber}`,
+        mandante,
+        golsMandante: null,
+        golsVisitante: null,
+        visitante,
+        status: PartidaStatusEnum.AGENDADA,
+        dataHora: '2026-03-08T21:00:00',
       },
     ]);
   });

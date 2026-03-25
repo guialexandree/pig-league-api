@@ -10,7 +10,7 @@ describe('ClassificacaoController', () => {
   let faker: Faker;
   const classificacaoService = {
     getClassificacao: jest.fn<
-      Promise<GetClassificacaoDto>,
+      Promise<GetClassificacaoDto[]>,
       [LoadClassificacaoFilters?]
     >(),
   };
@@ -37,24 +37,21 @@ describe('ClassificacaoController', () => {
   });
 
   it('deve retornar a classificacao do service', async () => {
-    const payload: GetClassificacaoDto = {
-      grupo: `CAMPEONATO - GRUPO ${faker.number.int({ min: 1, max: 2 })}`,
-      atualizadoEm: faker.date.recent().toISOString(),
-      classificacao: [
-        {
-          posicao: 1,
-          jogador: faker.person.fullName(),
-          jogos: 0,
-          vitorias: 0,
-          empates: 0,
-          derrotas: 0,
-          golsPositivo: 0,
-          golsContra: 0,
-          saldoGols: 0,
-          pontos: 0,
-        },
-      ],
-    };
+    const payload: GetClassificacaoDto[] = [
+      {
+        grupo: `CAMPEONATO - GRUPO ${faker.number.int({ min: 1, max: 2 })}`,
+        posicao: 1,
+        jogador: faker.person.fullName(),
+        jogos: 0,
+        vitorias: 0,
+        empates: 0,
+        derrotas: 0,
+        golsPositivo: 0,
+        golsContra: 0,
+        saldoGols: 0,
+        pontos: 0,
+      },
+    ];
 
     classificacaoService.getClassificacao.mockResolvedValue(payload);
 
@@ -70,11 +67,7 @@ describe('ClassificacaoController', () => {
   it('deve encaminhar o filtro de grupo para o service quando informado', async () => {
     const filtros: LoadClassificacaoFilters = { grupoId: 2 };
 
-    const payload: GetClassificacaoDto = {
-      grupo: 'CAMPEONATO',
-      atualizadoEm: faker.date.recent().toISOString(),
-      classificacao: [],
-    };
+    const payload: GetClassificacaoDto[] = [];
 
     classificacaoService.getClassificacao.mockResolvedValue(payload);
 
