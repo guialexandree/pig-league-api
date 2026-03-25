@@ -13,4 +13,11 @@ export class ClassificacaoController {
   ): Promise<GetClassificacaoDto[]> {
     return this.classificacaoService.getClassificacao(query);
   }
+
+  @Get('classificacao/geral')
+  getClassificacaoGeral(
+    @Query() query: LoadClassificacaoFilters,
+  ): Promise<GetClassificacaoDto[]> {
+    return this.classificacaoService.getClassificacaoGeral(query);
+  }
 }
