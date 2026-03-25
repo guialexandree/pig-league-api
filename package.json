@@ -8,7 +8,7 @@
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "node dist/main",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "TS_NODE_PROJECT=tsconfig.runtime.json node -r tsconfig-paths/register dist/main",
@@ -24,6 +24,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/swagger": "^11.2.6",
+    "@vercel/node": "^5.6.20",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.4",
     "date-fns": "^4.1.0",
