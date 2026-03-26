@@ -14,6 +14,10 @@ describe('PartidasController', () => {
       Promise<GetPartidasDto[]>,
       [filtros: GetPartidasFiltrosDto]
     >(),
+    getPartidasRealizadas: jest.fn<
+      Promise<GetPartidasDto[]>,
+      [filtros: GetPartidasFiltrosDto]
+    >(),
   };
 
   beforeAll(async () => {
@@ -35,6 +39,7 @@ describe('PartidasController', () => {
 
     controller = module.get<PartidasController>(PartidasController);
     partidasService.getPartidas.mockReset();
+    partidasService.getPartidasRealizadas.mockReset();
   });
 
   it('deve retornar as partidas do service', async () => {
@@ -70,5 +75,25 @@ describe('PartidasController', () => {
     await expect(controller.getPartidas(filtros)).resolves.toEqual(payload);
     expect(partidasService.getPartidas).toHaveBeenCalledTimes(1);
     expect(partidasService.getPartidas).toHaveBeenCalledWith(filtros);
+  });
+
+  it('deve retornar partidas realizadas do service', async () => {
+    const payload: GetPartidasDto[] = [
+      {
+        grupo: `GRUPO ${faker.number.int({ min: 1, max: 9 })}`,
+        dataHora: faker.date.recent().toISOString(),
+        mandante: faker.person.fullName(),
+        golsMandante: faker.number.int({ min: 0, max: 15 }),
+        golsVisitante: faker.number.int({ min: 0, max: 15 }),
+        visitante: faker.person.fullName(),
+        status: PartidaStatusEnum.REALIZADA,
+      },
+    ];
+
+    partidasService.getPartidasRealizadas.mockResolvedValue(payload);
+
+    await expect(controller.getPartidasRealizadas({})).resolves.toEqual(payload);
+    expect(partidasService.getPartidasRealizadas).toHaveBeenCalledTimes(1);
+    expect(partidasService.getPartidasRealizadas).toHaveBeenCalledWith({});
   });
 });

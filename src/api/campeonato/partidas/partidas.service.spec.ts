@@ -6,10 +6,12 @@ import {
 import { GetPartidasDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas.dto';
 import { GetPartidasFiltrosDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas-filtros.dto';
 import { PartidaStatusEnum } from '@/api/campeonato/partidas/use-cases/get-partidas/partida-status.enum';
+import { GetPartidasRealizadasUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-realizadas/get-partidas-realizadas.use-case';
 
 describe('PartidasService', () => {
   let service: PartidasService;
   let getPartidasUseCase: Pick<GetPartidasUseCase, 'execute'>;
+  let getPartidasRealizadasUseCase: Pick<GetPartidasRealizadasUseCase, 'execute'>;
   let faker: Faker;
 
   beforeAll(async () => {
@@ -22,8 +24,14 @@ describe('PartidasService', () => {
     getPartidasUseCase = {
       execute: jest.fn(),
     };
+    getPartidasRealizadasUseCase = {
+      execute: jest.fn(),
+    };
 
-    service = new PartidasService(getPartidasUseCase as GetPartidasUseCase);
+    service = new PartidasService(
+      getPartidasUseCase as GetPartidasUseCase,
+      getPartidasRealizadasUseCase as GetPartidasRealizadasUseCase,
+    );
   });
 
   afterEach(() => {
@@ -71,5 +79,26 @@ describe('PartidasService', () => {
 
     await expect(service.getPartidas({})).rejects.toBe(error);
     expect(getPartidasUseCase.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('deve buscar partidas realizadas com o use case dedicado', async () => {
+    const payload: GetPartidasDto[] = [
+      {
+        grupo: `GRUPO ${faker.number.int({ min: 1, max: 9 })}`,
+        dataHora: faker.date.soon().toISOString(),
+        mandante: faker.person.fullName(),
+        golsMandante: faker.number.int({ min: 0, max: 15 }),
+        golsVisitante: faker.number.int({ min: 0, max: 15 }),
+        visitante: faker.person.fullName(),
+        status: PartidaStatusEnum.REALIZADA,
+      },
+    ];
+
+    (getPartidasRealizadasUseCase.execute as jest.Mock).mockResolvedValue(payload);
+
+    await expect(service.getPartidasRealizadas({ grupoId: 2 })).resolves.toEqual(payload);
+    expect(getPartidasRealizadasUseCase.execute).toHaveBeenCalledTimes(1);
+    expect(getPartidasRealizadasUseCase.execute).toHaveBeenCalledWith({ grupoId: 2 });
+    expect(getPartidasUseCase.execute).not.toHaveBeenCalled();
   });
 });

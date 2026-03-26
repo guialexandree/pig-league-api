@@ -16,11 +16,20 @@ export class PartidasController {
   constructor(private readonly partidasService: PartidasService) {}
 
   @Get('partidas')
-  @ApiOperation({ summary: 'Buscar produtos por filtros' })
-  @ApiOkResponse({ description: 'Lista de produtos' })
+  @ApiOperation({ summary: 'Buscar partidas por filtros' })
+  @ApiOkResponse({ description: 'Lista de partidas' })
   getPartidas(
     @Query() query: GetPartidasFiltrosDto = {},
   ): Promise<GetPartidasDto[]> {
     return this.partidasService.getPartidas(query);
+  }
+
+  @Get('partidas-realizadas')
+  @ApiOperation({ summary: 'Buscar partidas realizadas por filtros' })
+  @ApiOkResponse({ description: 'Lista de partidas realizadas' })
+  getPartidasRealizadas(
+    @Query() query: GetPartidasFiltrosDto = {},
+  ): Promise<GetPartidasDto[]> {
+    return this.partidasService.getPartidasRealizadas(query);
   }
 }

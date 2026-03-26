@@ -12,7 +12,7 @@ export class GetJogadoresCsvParser implements GoogleSheetCsvParser<{
 
     const headerIndex = rows.findIndex((row) => {
       return (
-        normalizeCell(row[0]) === '#' && normalizeCell(row[1]) === 'jogador'
+        normalizeCell(row[0]) === '#' && normalizeCell(row[2]) === 'jogador'
       );
     });
 
@@ -39,7 +39,7 @@ export class GetJogadoresCsvParser implements GoogleSheetCsvParser<{
         continue;
       }
 
-      const nome = (row[1] ?? '').trim();
+      const nome = (row[2] ?? '').trim();
       if (!nome) {
         continue;
       }
