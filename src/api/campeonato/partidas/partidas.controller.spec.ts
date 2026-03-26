@@ -14,6 +14,10 @@ describe('PartidasController', () => {
       Promise<GetPartidasDto[]>,
       [filtros: GetPartidasFiltrosDto]
     >(),
+    getPartidasPendentes: jest.fn<
+      Promise<GetPartidasDto[]>,
+      [filtros: GetPartidasFiltrosDto]
+    >(),
     getPartidasRealizadas: jest.fn<
       Promise<GetPartidasDto[]>,
       [filtros: GetPartidasFiltrosDto]
@@ -39,6 +43,7 @@ describe('PartidasController', () => {
 
     controller = module.get<PartidasController>(PartidasController);
     partidasService.getPartidas.mockReset();
+    partidasService.getPartidasPendentes.mockReset();
     partidasService.getPartidasRealizadas.mockReset();
   });
 
@@ -95,5 +100,25 @@ describe('PartidasController', () => {
     await expect(controller.getPartidasRealizadas({})).resolves.toEqual(payload);
     expect(partidasService.getPartidasRealizadas).toHaveBeenCalledTimes(1);
     expect(partidasService.getPartidasRealizadas).toHaveBeenCalledWith({});
+  });
+
+  it('deve retornar partidas pendentes do service', async () => {
+    const payload: GetPartidasDto[] = [
+      {
+        grupo: `GRUPO ${faker.number.int({ min: 1, max: 9 })}`,
+        dataHora: faker.date.recent().toISOString(),
+        mandante: faker.person.fullName(),
+        golsMandante: null,
+        golsVisitante: null,
+        visitante: faker.person.fullName(),
+        status: PartidaStatusEnum.AGENDADA,
+      },
+    ];
+
+    partidasService.getPartidasPendentes.mockResolvedValue(payload);
+
+    await expect(controller.getPartidasPendentes({})).resolves.toEqual(payload);
+    expect(partidasService.getPartidasPendentes).toHaveBeenCalledTimes(1);
+    expect(partidasService.getPartidasPendentes).toHaveBeenCalledWith({});
   });
 });

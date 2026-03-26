@@ -4,6 +4,7 @@ import { PartidasService } from './partidas.service';
 import { GoogleSheetService } from '@/infra/google-sheet/google-sheet.service';
 import { GetPartidasUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas.use-case';
 import { GetPartidasCsvParser } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas-csv.parser';
+import { GetPartidasPendentesUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-pendentes/get-partidas-pendentes.use-case';
 import { GetPartidasRealizadasUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-realizadas/get-partidas-realizadas.use-case';
 
 @Module({
@@ -12,6 +13,7 @@ import { GetPartidasRealizadasUseCase } from '@/api/campeonato/partidas/use-case
     PartidasService,
     GoogleSheetService,
     GetPartidasUseCase,
+    GetPartidasPendentesUseCase,
     GetPartidasRealizadasUseCase,
     GetPartidasCsvParser,
   ],

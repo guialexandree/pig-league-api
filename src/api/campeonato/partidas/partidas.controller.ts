@@ -32,4 +32,13 @@ export class PartidasController {
   ): Promise<GetPartidasDto[]> {
     return this.partidasService.getPartidasRealizadas(query);
   }
+
+  @Get('partidas-pendentes')
+  @ApiOperation({ summary: 'Buscar partidas pendentes por filtros' })
+  @ApiOkResponse({ description: 'Lista de partidas pendentes' })
+  getPartidasPendentes(
+    @Query() query: GetPartidasFiltrosDto = {},
+  ): Promise<GetPartidasDto[]> {
+    return this.partidasService.getPartidasPendentes(query);
+  }
 }
