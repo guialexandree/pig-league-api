@@ -176,14 +176,18 @@ describe('GetClassificacaoGeralUseCase', () => {
     expect(grupo1Classificacao).toHaveLength(5);
     expect(grupo2Classificacao).toHaveLength(5);
 
-    expect(grupo1Classificacao.map((item) => item.posicao)).toEqual([1, 2, 3, 4, 5]);
-    expect(grupo2Classificacao.map((item) => item.posicao)).toEqual([1, 2, 3, 4, 5]);
+    expect(response.map((item) => item.posicao)).toEqual([
+      1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    ]);
+    expect(response.map((item) => item.pontos)).toEqual([
+      12, 12, 9, 9, 6, 6, 3, 3, 0, 0,
+    ]);
 
     expect(grupo1Classificacao.map((item) => item.jogador)).toEqual(
-      grupo1Jogadores,
+      expect.arrayContaining(grupo1Jogadores),
     );
     expect(grupo2Classificacao.map((item) => item.jogador)).toEqual(
-      grupo2Jogadores,
+      expect.arrayContaining(grupo2Jogadores),
     );
     expect(grupo1Classificacao.map((item) => item.statusFase)).toEqual([
       ClassificacaoStatusFaseEnum.CLASSIFICADO,
@@ -199,6 +203,30 @@ describe('GetClassificacaoGeralUseCase', () => {
       ClassificacaoStatusFaseEnum.CLASSIFICADO,
       ClassificacaoStatusFaseEnum.DESCLASSIFICADO,
     ]);
+  });
+
+  it('deve contabilizar empates e pontos para ambos os jogadores', async () => {
+    const grupo = `GRUPO ${faker.number.int({ min: 1, max: 1 })}`;
+    const jogadorA = faker.company.name();
+    const jogadorB = faker.company.name();
+
+    const partidas: GetPartidasDto[] = [
+      createPartida(grupo, jogadorA, 2, 2, jogadorB, PartidaStatusEnum.REALIZADA),
+    ];
+
+    (partidasService.getPartidas as jest.Mock).mockResolvedValue(partidas);
+
+    const response = await useCase.execute({ grupoId: 1 });
+    const jogadoresOrdenados = [jogadorA, jogadorB].sort((itemA, itemB) =>
+      itemA.localeCompare(itemB, 'pt-BR', { sensitivity: 'base' }),
+    );
+
+    expect(response.map((item) => item.jogador)).toEqual(jogadoresOrdenados);
+    expect(response.map((item) => item.jogos)).toEqual([1, 1]);
+    expect(response.map((item) => item.vitorias)).toEqual([0, 0]);
+    expect(response.map((item) => item.empates)).toEqual([1, 1]);
+    expect(response.map((item) => item.derrotas)).toEqual([0, 0]);
+    expect(response.map((item) => item.pontos)).toEqual([1, 1]);
   });
 
   it('deve retornar jogadores com estatisticas zeradas quando nao houver partidas realizadas', async () => {

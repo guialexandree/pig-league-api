@@ -14,6 +14,10 @@ type RankingValues = Pick<
   ClassificacaoItemBase,
   'pontos' | 'vitorias' | 'saldoGols'
 >;
+type RankedClassificacaoItem = ClassificacaoItemBase & {
+  posicaoGrupo: number;
+  statusFase: ClassificacaoStatusFaseEnum;
+};
 
 @Injectable()
 export class GetClassificacaoGeralUseCase {
@@ -326,7 +330,7 @@ export class GetClassificacaoGeralUseCase {
   private toResponse(
     classificacaoPorGrupo: Map<string, ClassificacaoItemBase[]>,
   ): GetClassificacaoGeralDto[] {
-    return Array.from(classificacaoPorGrupo.entries())
+    const rankingPorGrupo = Array.from(classificacaoPorGrupo.entries())
       .sort(([grupoA], [grupoB]) =>
         grupoA.localeCompare(grupoB, 'pt-BR', {
           sensitivity: 'base',
@@ -336,13 +340,48 @@ export class GetClassificacaoGeralUseCase {
       .flatMap(([, classificacao]) =>
         classificacao.map((item, index) => ({
           ...item,
-          posicao: index + 1,
+          posicaoGrupo: index + 1,
           statusFase:
             index < 4
               ? ClassificacaoStatusFaseEnum.CLASSIFICADO
               : ClassificacaoStatusFaseEnum.DESCLASSIFICADO,
         })),
       );
+
+    return rankingPorGrupo
+      .sort((itemA, itemB) => this.compareGlobalCriteria(itemA, itemB))
+      .map((item, index) => {
+        const { posicaoGrupo: _, ...classificacao } = item;
+        return {
+          ...classificacao,
+          posicao: index + 1,
+        };
+      });
+  }
+
+  private compareGlobalCriteria(
+    itemA: RankedClassificacaoItem,
+    itemB: RankedClassificacaoItem,
+  ): number {
+    if (itemB.pontos !== itemA.pontos) {
+      return itemB.pontos - itemA.pontos;
+    }
+
+    if (itemB.vitorias !== itemA.vitorias) {
+      return itemB.vitorias - itemA.vitorias;
+    }
+
+    if (itemB.saldoGols !== itemA.saldoGols) {
+      return itemB.saldoGols - itemA.saldoGols;
+    }
+
+    if (itemA.grupo === itemB.grupo) {
+      return itemA.posicaoGrupo - itemB.posicaoGrupo;
+    }
+
+    return itemA.jogador.localeCompare(itemB.jogador, 'pt-BR', {
+      sensitivity: 'base',
+    });
   }
 
   private getOrCreateJogador(
