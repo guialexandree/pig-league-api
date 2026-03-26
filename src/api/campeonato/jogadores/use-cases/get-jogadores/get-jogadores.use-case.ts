@@ -6,6 +6,7 @@ import { PartidasService } from '@/api/campeonato/partidas/partidas.service';
 import { GetPartidasDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas.dto';
 import { PartidaStatusEnum } from '@/api/campeonato/partidas/use-cases/get-partidas/partida-status.enum';
 import { JogadorTierEnum } from './jogador-tier.enum';
+import { JogadorXpBalance } from './jogador-xp-balance.constants';
 
 const SPREADSHEET_ID = '1ev1M_7z-I_NpC2pBsamqx1dbIeNTSBPJIWE4ow6kUQc';
 const JOGADORES_GIDS = ['230309619', '2118727000'] as const;
@@ -144,20 +145,31 @@ export class GetJogadoresUseCase {
     golsSofridos: number,
   ): number {
     const xpResultado =
-      resultado === 'VITORIA' ? 30 : resultado === 'EMPATE' ? 10 : 5;
+      resultado === 'VITORIA'
+        ? JogadorXpBalance.resultado.vitoria
+        : resultado === 'EMPATE'
+          ? JogadorXpBalance.resultado.empate
+          : JogadorXpBalance.resultado.derrota;
     const saldo = golsFeitos - golsSofridos;
-    const bonusSaldo = resultado === 'VITORIA' && saldo >= 3 ? 10 : 0;
-    const xpPartida = xpResultado + golsFeitos * 2 - golsSofridos + bonusSaldo;
+    const bonusSaldo =
+      resultado === 'VITORIA' && saldo >= JogadorXpBalance.bonusSaldoMinimo
+        ? JogadorXpBalance.bonusSaldoVitoria
+        : 0;
+    const xpPartida =
+      xpResultado +
+      golsFeitos * JogadorXpBalance.golsFeitosMultiplicador -
+      golsSofridos * JogadorXpBalance.golsSofridosPenalidade +
+      bonusSaldo;
 
-    return Math.max(5, xpPartida);
+    return Math.max(JogadorXpBalance.xpMinimoPartida, xpPartida);
   }
 
   private resolverTier(xp: number): JogadorTierEnum {
-    if (xp >= 2000) {
+    if (xp >= JogadorXpBalance.tiers.heroMin) {
       return JogadorTierEnum.Hero;
     }
 
-    if (xp >= 1000) {
+    if (xp >= JogadorXpBalance.tiers.goldMin) {
       return JogadorTierEnum.Gold;
     }
 
@@ -172,20 +184,24 @@ export class GetJogadoresUseCase {
     xpNecessarioProximoTier: number;
     progressoProximoTierPercentual: number;
   } {
+    const { silverMin, goldMin, heroMin } = JogadorXpBalance.tiers;
+
     if (tier === JogadorTierEnum.Hero) {
       return {
-        xpAtualNoTier: Math.max(0, xp - 2000),
+        xpAtualNoTier: Math.max(0, xp - heroMin),
         xpNecessarioProximoTier: 0,
         progressoProximoTierPercentual: 100,
       };
     }
 
-    const xpMinimoTier = tier === JogadorTierEnum.Silver ? 0 : 1000;
-    const xpMaximoExclusivoTier = tier === JogadorTierEnum.Silver ? 1000 : 2000;
+    const xpMinimoTier = tier === JogadorTierEnum.Silver ? silverMin : goldMin;
+    const xpMaximoExclusivoTier = tier === JogadorTierEnum.Silver ? goldMin : heroMin;
     const xpAtualNoTier = Math.max(0, xp - xpMinimoTier);
     const xpNecessarioProximoTier = xpMaximoExclusivoTier - xpMinimoTier;
     const progressoProximoTierPercentual = Number(
-      ((xpAtualNoTier / xpNecessarioProximoTier) * 100).toFixed(2),
+      Math.min(Math.max((xpAtualNoTier / xpNecessarioProximoTier) * 100, 0), 100).toFixed(
+        2,
+      ),
     );
 
     return {

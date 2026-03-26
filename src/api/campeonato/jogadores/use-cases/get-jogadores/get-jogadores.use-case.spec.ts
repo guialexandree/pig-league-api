@@ -123,11 +123,11 @@ describe('GetJogadoresUseCase', () => {
         partidas: 2,
         vitorias: 1,
         percentualVitoria: 50,
-        xp: 47,
+        xp: 35,
         tier: JogadorTierEnum.Silver,
-        xpAtualNoTier: 47,
-        xpNecessarioProximoTier: 1000,
-        progressoProximoTierPercentual: 4.7,
+        xpAtualNoTier: 35,
+        xpNecessarioProximoTier: 110,
+        progressoProximoTierPercentual: 31.82,
       },
       {
         id: 2,
@@ -136,11 +136,11 @@ describe('GetJogadoresUseCase', () => {
         partidas: 1,
         vitorias: 0,
         percentualVitoria: 0,
-        xp: 5,
+        xp: 6,
         tier: JogadorTierEnum.Silver,
-        xpAtualNoTier: 5,
-        xpNecessarioProximoTier: 1000,
-        progressoProximoTierPercentual: 0.5,
+        xpAtualNoTier: 6,
+        xpNecessarioProximoTier: 110,
+        progressoProximoTierPercentual: 5.45,
       },
       {
         id: 3,
@@ -152,8 +152,8 @@ describe('GetJogadoresUseCase', () => {
         xp: 12,
         tier: JogadorTierEnum.Silver,
         xpAtualNoTier: 12,
-        xpNecessarioProximoTier: 1000,
-        progressoProximoTierPercentual: 1.2,
+        xpNecessarioProximoTier: 110,
+        progressoProximoTierPercentual: 10.91,
       },
     ]);
     expect(new Date(response.atualizadoEm).toString()).not.toBe('Invalid Date');
@@ -208,11 +208,11 @@ describe('GetJogadoresUseCase', () => {
         partidas: 2,
         vitorias: 2,
         percentualVitoria: 100,
-        xp: 103,
+        xp: 71,
         tier: JogadorTierEnum.Silver,
-        xpAtualNoTier: 103,
-        xpNecessarioProximoTier: 1000,
-        progressoProximoTierPercentual: 10.3,
+        xpAtualNoTier: 71,
+        xpNecessarioProximoTier: 110,
+        progressoProximoTierPercentual: 64.55,
       },
       {
         id: 2,
@@ -221,41 +221,81 @@ describe('GetJogadoresUseCase', () => {
         partidas: 2,
         vitorias: 0,
         percentualVitoria: 0,
-        xp: 10,
+        xp: 12,
         tier: JogadorTierEnum.Silver,
-        xpAtualNoTier: 10,
-        xpNecessarioProximoTier: 1000,
-        progressoProximoTierPercentual: 1,
+        xpAtualNoTier: 12,
+        xpNecessarioProximoTier: 110,
+        progressoProximoTierPercentual: 10.91,
       },
     ]);
   });
 
-  it('deve classificar tiers Silver, Gold e Hero e calcular progresso para o proximo tier', async () => {
+  it('deve classificar tiers por desempenho em ate 9 partidas por jogador', async () => {
     const firstCsvPayload = faker.string.uuid();
     const secondCsvPayload = faker.string.uuid();
     const silverPlayer = faker.person.fullName();
     const goldPlayer = faker.person.fullName();
     const heroPlayer = faker.person.fullName();
-    const otherTeam = faker.company.name();
+
+    const createPartida = (
+      mandante: string,
+      golsMandante: number,
+      golsVisitante: number,
+      index: number,
+    ): GetPartidasDto => ({
+      grupo: 'Grupo 1',
+      dataHora: faker.date.recent().toISOString(),
+      mandante,
+      golsMandante,
+      golsVisitante,
+      visitante: `${faker.company.name()} ${index}`,
+      status: PartidaStatusEnum.REALIZADA,
+    });
+
+    const silverFixtures: Array<[number, number]> = [
+      [1, 0],
+      [0, 0],
+      [0, 1],
+      [1, 2],
+      [0, 1],
+      [0, 2],
+      [1, 3],
+      [0, 1],
+      [2, 3],
+    ];
+    const goldFixtures: Array<[number, number]> = [
+      [2, 1],
+      [2, 1],
+      [1, 0],
+      [3, 2],
+      [1, 1],
+      [2, 2],
+      [1, 2],
+      [0, 1],
+      [2, 3],
+    ];
+    const heroFixtures: Array<[number, number]> = [
+      [3, 0],
+      [3, 0],
+      [3, 0],
+      [3, 0],
+      [2, 0],
+      [2, 0],
+      [2, 0],
+      [2, 2],
+      [1, 2],
+    ];
+
     const partidas: GetPartidasDto[] = [
-      ...Array.from({ length: 16 }, () => ({
-        grupo: 'Grupo 1',
-        dataHora: faker.date.recent().toISOString(),
-        mandante: goldPlayer,
-        golsMandante: 12,
-        golsVisitante: 0,
-        visitante: otherTeam,
-        status: PartidaStatusEnum.REALIZADA,
-      })),
-      ...Array.from({ length: 32 }, () => ({
-        grupo: 'Grupo 1',
-        dataHora: faker.date.recent().toISOString(),
-        mandante: heroPlayer,
-        golsMandante: 12,
-        golsVisitante: 0,
-        visitante: otherTeam,
-        status: PartidaStatusEnum.REALIZADA,
-      })),
+      ...silverFixtures.map(([gf, ga], index) =>
+        createPartida(silverPlayer, gf, ga, index + 1),
+      ),
+      ...goldFixtures.map(([gf, ga], index) =>
+        createPartida(goldPlayer, gf, ga, index + 101),
+      ),
+      ...heroFixtures.map(([gf, ga], index) =>
+        createPartida(heroPlayer, gf, ga, index + 201),
+      ),
     ];
 
     (googleSheetService.getSpreadsheetCsv as jest.Mock)
@@ -277,39 +317,39 @@ describe('GetJogadoresUseCase', () => {
       {
         id: 1,
         nome: silverPlayer,
-        gols: 0,
-        partidas: 0,
-        vitorias: 0,
-        percentualVitoria: 0,
-        xp: 0,
+        gols: 5,
+        partidas: 9,
+        vitorias: 1,
+        percentualVitoria: 11.11,
+        xp: 73,
         tier: JogadorTierEnum.Silver,
-        xpAtualNoTier: 0,
-        xpNecessarioProximoTier: 1000,
-        progressoProximoTierPercentual: 0,
+        xpAtualNoTier: 73,
+        xpNecessarioProximoTier: 110,
+        progressoProximoTierPercentual: 66.36,
       },
       {
         id: 2,
         nome: goldPlayer,
-        gols: 192,
-        partidas: 16,
-        vitorias: 16,
-        percentualVitoria: 100,
-        xp: 1024,
+        gols: 14,
+        partidas: 9,
+        vitorias: 4,
+        percentualVitoria: 44.44,
+        xp: 126,
         tier: JogadorTierEnum.Gold,
-        xpAtualNoTier: 24,
-        xpNecessarioProximoTier: 1000,
-        progressoProximoTierPercentual: 2.4,
+        xpAtualNoTier: 16,
+        xpNecessarioProximoTier: 60,
+        progressoProximoTierPercentual: 26.67,
       },
       {
         id: 3,
         nome: heroPlayer,
-        gols: 384,
-        partidas: 32,
-        vitorias: 32,
-        percentualVitoria: 100,
-        xp: 2048,
+        gols: 21,
+        partidas: 9,
+        vitorias: 7,
+        percentualVitoria: 77.78,
+        xp: 204,
         tier: JogadorTierEnum.Hero,
-        xpAtualNoTier: 48,
+        xpAtualNoTier: 34,
         xpNecessarioProximoTier: 0,
         progressoProximoTierPercentual: 100,
       },
