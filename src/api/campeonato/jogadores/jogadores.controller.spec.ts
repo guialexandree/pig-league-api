@@ -3,6 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { JogadoresController } from './jogadores.controller';
 import { JogadoresService } from './jogadores.service';
 import { GetJogadoresDto } from './use-cases/get-jogadores/get-jogadores.dto';
+import { JogadorTierEnum } from './use-cases/get-jogadores/jogador-tier.enum';
 
 describe('JogadoresController', () => {
   let controller: JogadoresController;
@@ -44,6 +45,15 @@ describe('JogadoresController', () => {
           partidas: faker.number.int({ min: 0, max: 30 }),
           vitorias: faker.number.int({ min: 0, max: 30 }),
           percentualVitoria: faker.number.float({
+            min: 0,
+            max: 100,
+            fractionDigits: 2,
+          }),
+          xp: faker.number.int({ min: 0, max: 3500 }),
+          tier: JogadorTierEnum.Gold,
+          xpAtualNoTier: faker.number.int({ min: 0, max: 999 }),
+          xpNecessarioProximoTier: 1000,
+          progressoProximoTierPercentual: faker.number.float({
             min: 0,
             max: 100,
             fractionDigits: 2,

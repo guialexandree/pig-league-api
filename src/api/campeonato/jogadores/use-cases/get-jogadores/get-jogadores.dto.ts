@@ -1,3 +1,5 @@
+import { JogadorTierEnum } from './jogador-tier.enum';
+
 export interface GetJogadorDto {
   id: number;
   nome: string;
@@ -5,6 +7,11 @@ export interface GetJogadorDto {
   partidas: number;
   vitorias: number;
   percentualVitoria: number;
+  xp: number;
+  tier: JogadorTierEnum;
+  xpAtualNoTier: number;
+  xpNecessarioProximoTier: number;
+  progressoProximoTierPercentual: number;
 }
 
 export interface GetJogadoresDto {

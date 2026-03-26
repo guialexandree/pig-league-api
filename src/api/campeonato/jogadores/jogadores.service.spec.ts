@@ -2,6 +2,7 @@ import type { Faker } from '@faker-js/faker';
 import { JogadoresService } from './jogadores.service';
 import { GetJogadoresUseCase } from '@/api/campeonato/jogadores/use-cases/get-jogadores/get-jogadores.use-case';
 import { GetJogadoresDto } from '@/api/campeonato/jogadores/use-cases/get-jogadores/get-jogadores.dto';
+import { JogadorTierEnum } from '@/api/campeonato/jogadores/use-cases/get-jogadores/jogador-tier.enum';
 
 describe('JogadoresService', () => {
   let service: JogadoresService;
@@ -38,6 +39,15 @@ describe('JogadoresService', () => {
           partidas: faker.number.int({ min: 0, max: 30 }),
           vitorias: faker.number.int({ min: 0, max: 30 }),
           percentualVitoria: faker.number.float({
+            min: 0,
+            max: 100,
+            fractionDigits: 2,
+          }),
+          xp: faker.number.int({ min: 0, max: 3500 }),
+          tier: JogadorTierEnum.Silver,
+          xpAtualNoTier: faker.number.int({ min: 0, max: 999 }),
+          xpNecessarioProximoTier: 1000,
+          progressoProximoTierPercentual: faker.number.float({
             min: 0,
             max: 100,
             fractionDigits: 2,
