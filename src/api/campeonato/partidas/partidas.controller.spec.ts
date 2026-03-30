@@ -5,6 +5,7 @@ import { PartidasService } from './partidas.service';
 import { GetPartidasDto } from './use-cases/get-partidas/get-partidas.dto';
 import { GetPartidasFiltrosDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas-filtros.dto';
 import { PartidaStatusEnum } from './use-cases/get-partidas/partida-status.enum';
+import { GetPartidasTotaisDto } from '@/api/campeonato/partidas/use-cases/get-partidas-totais/get-partidas-totais.dto';
 
 describe('PartidasController', () => {
   let controller: PartidasController;
@@ -22,6 +23,7 @@ describe('PartidasController', () => {
       Promise<GetPartidasDto[]>,
       [filtros: GetPartidasFiltrosDto]
     >(),
+    getPartidasTotais: jest.fn<Promise<GetPartidasTotaisDto>, []>(),
   };
 
   beforeAll(async () => {
@@ -45,6 +47,7 @@ describe('PartidasController', () => {
     partidasService.getPartidas.mockReset();
     partidasService.getPartidasPendentes.mockReset();
     partidasService.getPartidasRealizadas.mockReset();
+    partidasService.getPartidasTotais.mockReset();
   });
 
   it('deve retornar as partidas do service', async () => {
@@ -120,5 +123,19 @@ describe('PartidasController', () => {
     await expect(controller.getPartidasPendentes({})).resolves.toEqual(payload);
     expect(partidasService.getPartidasPendentes).toHaveBeenCalledTimes(1);
     expect(partidasService.getPartidasPendentes).toHaveBeenCalledWith({});
+  });
+
+  it('deve retornar totais de partidas do service', async () => {
+    const payload: GetPartidasTotaisDto = {
+      totalPartidas: faker.number.int({ min: 0, max: 50 }),
+      totalRealizada: faker.number.int({ min: 0, max: 50 }),
+      totalPendente: faker.number.int({ min: 0, max: 50 }),
+    };
+
+    partidasService.getPartidasTotais.mockResolvedValue(payload);
+
+    await expect(controller.getPartidasTotais()).resolves.toEqual(payload);
+    expect(partidasService.getPartidasTotais).toHaveBeenCalledTimes(1);
+    expect(partidasService.getPartidasTotais).toHaveBeenCalledWith();
   });
 });

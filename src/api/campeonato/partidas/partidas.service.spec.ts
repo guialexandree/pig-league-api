@@ -8,12 +8,15 @@ import { GetPartidasFiltrosDto } from '@/api/campeonato/partidas/use-cases/get-p
 import { PartidaStatusEnum } from '@/api/campeonato/partidas/use-cases/get-partidas/partida-status.enum';
 import { GetPartidasPendentesUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-pendentes/get-partidas-pendentes.use-case';
 import { GetPartidasRealizadasUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-realizadas/get-partidas-realizadas.use-case';
+import { GetPartidasTotaisUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-totais/get-partidas-totais.use-case';
+import { GetPartidasTotaisDto } from '@/api/campeonato/partidas/use-cases/get-partidas-totais/get-partidas-totais.dto';
 
 describe('PartidasService', () => {
   let service: PartidasService;
   let getPartidasUseCase: Pick<GetPartidasUseCase, 'execute'>;
   let getPartidasPendentesUseCase: Pick<GetPartidasPendentesUseCase, 'execute'>;
   let getPartidasRealizadasUseCase: Pick<GetPartidasRealizadasUseCase, 'execute'>;
+  let getPartidasTotaisUseCase: Pick<GetPartidasTotaisUseCase, 'execute'>;
   let faker: Faker;
 
   beforeAll(async () => {
@@ -32,11 +35,15 @@ describe('PartidasService', () => {
     getPartidasRealizadasUseCase = {
       execute: jest.fn(),
     };
+    getPartidasTotaisUseCase = {
+      execute: jest.fn(),
+    };
 
     service = new PartidasService(
       getPartidasUseCase as GetPartidasUseCase,
       getPartidasPendentesUseCase as GetPartidasPendentesUseCase,
       getPartidasRealizadasUseCase as GetPartidasRealizadasUseCase,
+      getPartidasTotaisUseCase as GetPartidasTotaisUseCase,
     );
   });
 
@@ -127,5 +134,19 @@ describe('PartidasService', () => {
     expect(getPartidasPendentesUseCase.execute).toHaveBeenCalledTimes(1);
     expect(getPartidasPendentesUseCase.execute).toHaveBeenCalledWith({ grupoId: 1 });
     expect(getPartidasUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('deve buscar totais com use case dedicado sem filtros', async () => {
+    const payload: GetPartidasTotaisDto = {
+      totalPartidas: faker.number.int({ min: 0, max: 100 }),
+      totalRealizada: faker.number.int({ min: 0, max: 100 }),
+      totalPendente: faker.number.int({ min: 0, max: 100 }),
+    };
+
+    (getPartidasTotaisUseCase.execute as jest.Mock).mockResolvedValue(payload);
+
+    await expect(service.getPartidasTotais()).resolves.toEqual(payload);
+    expect(getPartidasTotaisUseCase.execute).toHaveBeenCalledTimes(1);
+    expect(getPartidasTotaisUseCase.execute).toHaveBeenCalledWith();
   });
 });

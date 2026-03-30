@@ -9,6 +9,7 @@ import { PartidasService } from './partidas.service';
 import { GetPartidasDto } from './use-cases/get-partidas/get-partidas.dto';
 import { GetPartidasFiltrosDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas-filtros.dto';
 import { ApiOkResponse, ApiOperation } from '@nestjs/swagger';
+import { GetPartidasTotaisDto } from '@/api/campeonato/partidas/use-cases/get-partidas-totais/get-partidas-totais.dto';
 
 @UseInterceptors(ClassSerializerInterceptor)
 @Controller('campeonato')
@@ -40,5 +41,12 @@ export class PartidasController {
     @Query() query: GetPartidasFiltrosDto = {},
   ): Promise<GetPartidasDto[]> {
     return this.partidasService.getPartidasPendentes(query);
+  }
+
+  @Get('totais')
+  @ApiOperation({ summary: 'Buscar totais de partidas' })
+  @ApiOkResponse({ description: 'Totais de partidas' })
+  getPartidasTotais(): Promise<GetPartidasTotaisDto> {
+    return this.partidasService.getPartidasTotais();
   }
 }

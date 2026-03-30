@@ -6,6 +6,8 @@ import { GetPartidasDto } from '@/api/campeonato/partidas/use-cases/get-partidas
 import { GetPartidasFiltrosDto } from '@/api/campeonato/partidas/use-cases/get-partidas/get-partidas-filtros.dto';
 import { GetPartidasPendentesUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-pendentes/get-partidas-pendentes.use-case';
 import { GetPartidasRealizadasUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-realizadas/get-partidas-realizadas.use-case';
+import { GetPartidasTotaisUseCase } from '@/api/campeonato/partidas/use-cases/get-partidas-totais/get-partidas-totais.use-case';
+import { GetPartidasTotaisDto } from '@/api/campeonato/partidas/use-cases/get-partidas-totais/get-partidas-totais.dto';
 
 @Injectable()
 export class PartidasService {
@@ -13,6 +15,7 @@ export class PartidasService {
     private readonly getPartidasUseCase: GetPartidasUseCase,
     private readonly getPartidasPendentesUseCase: GetPartidasPendentesUseCase,
     private readonly getPartidasRealizadasUseCase: GetPartidasRealizadasUseCase,
+    private readonly getPartidasTotaisUseCase: GetPartidasTotaisUseCase,
   ) {}
 
   async getPartidas(grupo: GetPartidasFiltrosDto = {}): Promise<GetPartidasDto[]> {
@@ -29,5 +32,9 @@ export class PartidasService {
     grupo: GetPartidasFiltrosDto = {},
   ): Promise<GetPartidasDto[]> {
     return this.getPartidasPendentesUseCase.execute(grupo);
+  }
+
+  async getPartidasTotais(): Promise<GetPartidasTotaisDto> {
+    return this.getPartidasTotaisUseCase.execute();
   }
 }
